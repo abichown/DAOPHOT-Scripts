@@ -1,6 +1,6 @@
 # DAOPHOT
 
-This repository contains all the scripts required to perform precise photometry of Spitzer Data using DAOPHOT.
+## This repository contains all the scripts required to perform precise photometry of Spitzer Data using DAOPHOT.
 
 The scripts should be performed in this order:
 1. Setup - give all your files sensible names and put them in a more logical directory structure
@@ -19,4 +19,4 @@ The scripts should be performed in this order:
 
 (See Full_Procedure.pdf for more information)
 
-OBVIOUSLY STILL IN PROGRESS BUT IT'S OKAY BECAUSE NO ONE CAN SEE IT
+## OBVIOUSLY STILL IN PROGRESS BUT IT'S OKAY BECAUSE NO ONE CAN SEE IT
