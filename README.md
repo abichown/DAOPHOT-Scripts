@@ -13,9 +13,6 @@ The scripts should be performed in this order:
 8. Pixel phase correction
 9. Extract mag and merr for each image for V* to be analysed
 10. Plot light curve
-.
-.
-.
 
 (See Full_Procedure.pdf for more information)
 
