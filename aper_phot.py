@@ -91,3 +91,6 @@ daophot.expect("Are you happy with this?")
 daophot.sendline("y")
 
 print "FIND complete"
+
+# Aperture photometry
+
