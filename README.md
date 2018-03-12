@@ -3,7 +3,7 @@
 ## This repository contains all the scripts required to perform precise photometry of Spitzer Data using DAOPHOT.
 
 The scripts should be performed in this order:
-1. Setup - give all your files sensible names and put them in a more logical directory structure
+1. file_setup.py - give all your files sensible names and put them in a more logical directory structure
 2. Find the stars & perform aperture photometry
 3. Pick stars & creation of PSF
 4. Apply PSF model & subtract stars
