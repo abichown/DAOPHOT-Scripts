@@ -94,3 +94,7 @@ print "FIND complete"
 
 # Aperture photometry
 
+daophot.expect("Command:")
+daophot.sendline("PH")
+daophot.expect("File with aperture radii")
+daophot.sendline("")
