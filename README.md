@@ -4,6 +4,7 @@
 
 The scripts should be performed in this order:
 1. file_setup.py - give all your files sensible names and put them in a more logical directory structure
+2. daophot_setup.py - set up the optional parameters required to perform the photometry
 2. Find the stars & perform aperture photometry
 3. Pick stars & creation of PSF
 4. Apply PSF model & subtract stars
