@@ -6,10 +6,10 @@ Written by: Abi Chown A.H.Chown@bath.ac.uk
 
 import sys
 import pexpect
-
+import shutil
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-						WORK OUT FILENAME TO WORK ON
+						    		INITIAL SETUP
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 # Info entered on command line to identify the image to work on
@@ -34,12 +34,13 @@ filename = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_
 
 print 'Currently working on file:' + filename
 
-########## HERE CURRENTLY WORKING #######################
-
+# Copy daophot options file to current working directory
 if channel == '1':
-	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot_test.opt')
+	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
 if channel == '2':
-	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot_test.opt')
+	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+
+
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 								RUN DAOPHOT
