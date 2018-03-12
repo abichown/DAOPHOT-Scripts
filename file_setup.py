@@ -10,11 +10,13 @@ import shutil
 import glob
 import fnmatch
 
+# This is a searching script that looks for all files in the file system called certain things
 os.chdir('/home/ac833/Python/')
 from search_files import unsorted_files
 
 def find_bcd_a_home():
 
+	# Home to all the unorganised 'raw' (for want of a better word) data
 	os.chdir('/mnt/ac833-XDrive/Physics/ResearchProjects/VScowcroft/Scowcroft_Astro/Spitzer/LMC/AORs/')
 
 	# Search folders for files and write to text file '~/unsorted_files.txt'
