@@ -25,8 +25,6 @@ if len(epoch_number) == 1:
 	epoch_number = '0' + epoch_number
 
 
-
-
 # File to work on
 filename = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn'
 
