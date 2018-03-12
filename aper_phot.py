@@ -65,6 +65,9 @@ if channel == '1':
 if channel == '2':
 	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
 
+# Copy aperture photometry options files to current working directory
+shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
+
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		RUN DAOPHOT
@@ -82,7 +85,7 @@ print 'Attached file: ' + image_nf
 
 # Find the stars
 daophot.expect("Command:")
-daophot.sendline("FI")
+daophot.sendline("fi")
 daophot.expect("Number of frames averaged, summed:")
 daophot.sendline("1,1")
 daophot.expect("File for positions")
@@ -93,8 +96,17 @@ daophot.sendline("y")
 print "FIND complete"
 
 # Aperture photometry
+## APERTURE PHOT IS CURRENTLY RUNNING THROUGH ALL THE COMMANDS BUT IS CREATING A BLANK FILE
 
 daophot.expect("Command:")
-daophot.sendline("PH")
+daophot.sendline("ph")
 daophot.expect("File with aperture radii")
 daophot.sendline("")
+daophot.expect("PHO>")
+daophot.sendline("")
+daophot.expect("Input position file")
+daophot.sendline(image_nf + '.coo')
+daophot.expect("Output file")
+daophot.sendline(image_nf + '.ap')
+
+print "PHOT complete"
