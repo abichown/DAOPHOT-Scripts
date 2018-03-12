@@ -1,6 +1,6 @@
 '''
-Purpose: Really a practice of how to control DAOPHOT with Python but also looking to set up
-optional parameters ready to do photometry
+Purpose: Really a practice of how to control DAOPHOT with Python but also script to
+do initial aperture photometry
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -52,6 +52,9 @@ daophot = pexpect.spawn("daophot")
 daophot.expect("Command:")
 daophot.sendline("AT " + filename)
 
-
-# Setup log file
+# Find the stars
+daophot.expect("Command:")
+daophot.sendline("FI")
+daophot.expect("Number of frames averaged, summed:")
+daophot.sendline("1,1")
 
