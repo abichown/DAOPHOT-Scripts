@@ -5,7 +5,12 @@ Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
 import sys
+import pexpect
 
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+						WORK OUT FILENAME TO WORK ON
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 # Info entered on command line to identify the image to work on
 target_name = sys.argv[1]
@@ -24,13 +29,28 @@ else: wavelength = 'channel not defined'
 if len(epoch_number) == 1:
 	epoch_number = '0' + epoch_number
 
-
 # File to work on
 filename = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn'
 
 print 'Currently working on file:' + filename
 
-# Open DAOPHOT
+########## HERE CURRENTLY WORKING #######################
+
+if channel == '1':
+	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot_test.opt')
+if channel == '2':
+	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot_test.opt')
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+								RUN DAOPHOT
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+daophot = pexpect.spawn("daophot")
+
+# Attach the image
+daophot.expect("Command:")
+daophot.sendline("AT " + filename)
+
 
 # Setup log file
 
