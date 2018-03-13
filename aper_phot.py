@@ -22,9 +22,9 @@ epoch_number = sys.argv[3]
 dither_number = sys.argv[4]
 
 # Convert channel number to wavelength
-if channel == '1':
+if channel == '1' or channel == '3p6' or channel == '3p6um' or channel == 'ir1':
 	wavelength = '3p6um'
-elif channel == '2':
+elif channel == '2' or channel == '4p5' or channel == '4p5um' or channel == 'ir2':
 	wavelength = '4p5um'
 else: wavelength = 'channel not defined'
 
