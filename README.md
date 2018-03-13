@@ -4,6 +4,7 @@
 
 The scripts should be performed in this order:
 1. file_setup.py - give all your files sensible names and put them in a more logical directory structure
+2. convert_to_counts.ipynb - convert all the files in new file system to counts
 2. aper_phot.py - find the stars & perform aperture photometry
 3. Pick stars & creation of PSF
 4. Apply PSF model & subtract stars
