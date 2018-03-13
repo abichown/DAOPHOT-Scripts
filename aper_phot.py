@@ -54,7 +54,7 @@ print 'Changed directory to where the image is: ' + path_to_image
 os.chdir(path_to_image)
 
 # Remove any previous runs
-extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits']
+extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits', '_log.txt']
 for ext in extensions:
 	if (os.path.isfile(image_nf+ext)):
 		os.remove(image_nf+ext)
@@ -83,7 +83,7 @@ daophot.logfile = fout
 
 # Attach the image
 daophot.expect("Command:")
-daophot.sendline("AT " + image_nf)
+daophot.sendline("aT " + image_nf)
 
 print 'Attached file: ' + image_nf
 
