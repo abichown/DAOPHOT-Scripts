@@ -77,6 +77,10 @@ print 'Opening DAOPHOT...'
 
 daophot = pexpect.spawn("daophot")
 
+# Set up log file
+fout = file(image_nf+'_log.txt','w')
+daophot.logfile = fout
+
 # Attach the image
 daophot.expect("Command:")
 daophot.sendline("AT " + image_nf)
@@ -105,8 +109,8 @@ daophot.sendline("")
 daophot.expect("PHO>")
 daophot.sendline("")
 daophot.expect("Input position file")
-daophot.sendline(image_nf + '.coo')
+daophot.sendline(image_nf + ".coo")
 daophot.expect("Output file")
-daophot.sendline(image_nf + '.ap')
+daophot.sendline(image_nf + ".ap")
 
 print "PHOT complete"
