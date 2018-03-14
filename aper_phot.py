@@ -100,7 +100,6 @@ daophot.sendline("y")
 print "FIND complete"
 
 # Aperture photometry
-## APERTURE PHOT IS CURRENTLY RUNNING THROUGH ALL THE COMMANDS BUT IS CREATING A BLANK FILE
 
 daophot.expect("Command:")
 daophot.sendline("ph")
@@ -114,3 +113,11 @@ daophot.expect("Output file")
 daophot.sendline(image_nf + ".ap")
 
 print "PHOT complete"
+
+# Exit daophot
+
+daophot.expect("Command:")
+daophot.sendline("exit")
+daophot.close(force=True)
+
+print "Aperture phot magnitudes for detected stars complete"
