@@ -15,6 +15,6 @@ The scripts should be performed in this order:
 9. Extract mag and merr for each image for V* to be analysed
 10. Plot light curve
 
-(See Full_Procedure.pdf for more information)
+These steps will be updated with the script names as and when I make them.
 
-## OBVIOUSLY STILL IN PROGRESS BUT IT'S OKAY BECAUSE NO ONE CAN SEE IT
+(See full_procedure.pdf for more information)
