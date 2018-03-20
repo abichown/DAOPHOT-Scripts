@@ -190,7 +190,7 @@ print "All stars now have psf magnitudes and have been subtracted"
 		DELETE FILES NO LONGER NEEDED
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# Remove any previous runs
+# Remove any files not needed
 extensions = ['.coo', '.nei', '.psf', '_allstar_log.txt', '_daophot_log.txt']
 for ext in extensions:
 	if (os.path.isfile(image_nf+ext)):
