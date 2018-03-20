@@ -70,7 +70,7 @@ shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
 shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		RUN DAOPHOT
+		RUN DAOPHOT - FIRST PASS
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 print 'Opening DAOPHOT...'
@@ -147,6 +147,10 @@ while psf_done != 'done':
 
 print "PSF model created"
 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		RUN ALLSTAR - FIRST PASS
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
 # Now do ALLSTAR on this first pass PSF model
 
 allstar = pexpect.spawn("allstar")
@@ -179,5 +183,42 @@ allstar.expect("Good bye.")
 allstar.close(force=True)
 
 print "ALLSTAR run on PSF stars and neighbours"
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		RUN DAOPHOT - SECOND PASS - PHOTOMETRY ON NEIGHBOUR SUBTRACTED IMAGE
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+daophot = pexpect.spawn("daophot")
+
+# Set up log file
+fout = file(image_nf+'_daophot_log.txt','w')
+daophot.logfile = fout
+
+daophot.expect("Command:")
+daophot.sendline("at " + image_nf)
+
+# Substar to create image with no neighbours of PSF stars
+daophot.expect("Command:")
+daophot.sendline("su")
+daophot.expect("File with the PSF")
+daophot.sendline("")
+daophot.expect("File with photometry")
+daophot.sendline(".als")
+daophot.expect("Do you have stars to leave in?")
+daophot.sendline("y")
+daophot.expect("File with star list")
+daophot.sendline("")
+daophot.expect("Name for subtracted image")
+daophot.sendline("")
+
+# Exit daophot
+daophot.expect("Command:")
+daophot.sendline("exit")
+daophot.close(force=True)
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		RUN ALLSTAR - SECOND PASS
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 print "Photometry on " + image_nf + " complete"
