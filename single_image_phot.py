@@ -88,6 +88,7 @@ daophot.sendline("aT " + image_nf)
 print 'Attached file: ' + image_nf
 
 # Find the stars
+
 daophot.expect("Command:")
 daophot.sendline("fi")
 daophot.expect("Number of frames averaged, summed:")
@@ -115,6 +116,7 @@ daophot.sendline(image_nf + ".ap")
 print "PHOT complete"
 
 # Pick candidate PSF stars
+
 daophot.expect("Command:")
 daophot.sendline("pi")
 daophot.expect("Input file name")
@@ -124,7 +126,18 @@ daophot.sendline("25,19")
 daophot.expect("Output file name")
 daophot.sendline("")
 
+print "Candidate PSF stars chosen"
+
 # PSF MODEL CREATION
+# This part is still to be done by hand for now 
+# So go away and create the PSF model with output files '.psf' and '.nei'
+
+print "Go to DAOPHOT and make PSF model..."
+
+psf_done = ''
+
+while psf_done != 'done':
+	psf_done = raw_input("Type 'done' when PSF model made: ")
 
 # Exit daophot
 
