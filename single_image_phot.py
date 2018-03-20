@@ -151,6 +151,10 @@ print "PSF model created"
 
 allstar = pexpect.spawn("allstar")
 
+# Set up log file
+fout = file('allstar_log.txt','w')
+allstar.logfile = fout
+
 allstar.expect('OPT>')
 allstar.sendline("")
 allstar.expect('Input image name:')
@@ -169,6 +173,9 @@ allstar.sendline("")
 # Creates _dns file
 allstar.expect('Name for subtracted image')
 allstar.sendline("")
+
+# Exit allstar
+allstar.close(force=True)
 
 print "ALLSTAR run on PSF stars and neighbours"
 
