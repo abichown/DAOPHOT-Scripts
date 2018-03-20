@@ -18,3 +18,7 @@ The scripts should be performed in this order:
 These steps will be updated with the script names as and when I make them.
 
 (See full_procedure.pdf for more information)
+
+Additional scripts:
+- single_image_phot.py - performs photometry on a single image 
+
