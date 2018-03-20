@@ -114,6 +114,18 @@ daophot.sendline(image_nf + ".ap")
 
 print "PHOT complete"
 
+# Pick candidate PSF stars
+daophot.expect("Command:")
+daophot.sendline("pi")
+daophot.expect("Input file name")
+daophot.sendline("")
+daophot.expect("Desired number of stars, faintest magnitude:")
+daophot.sendline("25,19")
+daophot.expect("Output file name")
+daophot.sendline("")
+
+# PSF MODEL CREATION
+
 # Exit daophot
 
 daophot.expect("Command:")
