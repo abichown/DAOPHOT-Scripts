@@ -128,21 +128,48 @@ daophot.sendline("")
 
 print "Candidate PSF stars chosen"
 
-# PSF MODEL CREATION
-# This part is still to be done by hand for now 
-# So go away and create the PSF model with output files '.psf' and '.nei'
-
-print "Go to DAOPHOT and make PSF model..."
-
-psf_done = ''
-
-while psf_done != 'done':
-	psf_done = raw_input("Type 'done' when PSF model made: ")
-
 # Exit daophot
 
 daophot.expect("Command:")
 daophot.sendline("exit")
 daophot.close(force=True)
 
-print "Photometry complete"
+# PSF MODEL CREATION
+# This part is still to be done by hand for now 
+
+print "Go to DAOPHOT and make PSF model..."
+
+psf_done = raw_input("Type 'done' when PSF model created: ")
+
+while psf_done != 'done':
+	print "PSF not created... go make the PSF!"
+	psf_done = raw_input("Type 'done' when PSF model created: ")
+
+print "PSF model created"
+
+# Now do ALLSTAR on this first pass PSF model
+
+allstar = pexpect.spawn("allstar")
+
+allstar.expect('OPT>')
+allstar.sendline("")
+allstar.expect('Input image name:')
+allstar.sendline(image_nf)
+allstar.expect('File with the PSF')
+allstar.sendline("")
+
+# Fit PSF model only to the PSF stars and their neighbours first
+allstar.expect('Input file')
+allstar.sendline(".nei")
+
+# Creates .als file
+allstar.expect('File for results')
+allstar.sendline("")
+
+# Creates _dns file
+allstar.expect('Name for subtracted image')
+allstar.sendline("")
+
+print "ALLSTAR run on PSF stars and neighbours"
+
+print "Photometry on " + image_nf + " complete"
