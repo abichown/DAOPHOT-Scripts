@@ -54,7 +54,7 @@ print 'Changed directory to where the image is: ' + path_to_image
 os.chdir(path_to_image)
 
 # Remove any previous runs
-extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits', '_log.txt']
+extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits', '_allstar_log.txt', '_daophot_log.txt']
 for ext in extensions:
 	if (os.path.isfile(image_nf+ext)):
 		os.remove(image_nf+ext)
@@ -65,9 +65,9 @@ if channel == '1':
 if channel == '2':
 	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
 
-# Copy aperture photometry options files to current working directory
+# Copy aperture photometry and allstar options files to current working directory
 shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
-
+shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		RUN DAOPHOT
@@ -78,12 +78,12 @@ print 'Opening DAOPHOT...'
 daophot = pexpect.spawn("daophot")
 
 # Set up log file
-fout = file(image_nf+'_log.txt','w')
+fout = file(image_nf+'_daophot_log.txt','w')
 daophot.logfile = fout
 
 # Attach the image
 daophot.expect("Command:")
-daophot.sendline("aT " + image_nf)
+daophot.sendline("at " + image_nf)
 
 print 'Attached file: ' + image_nf
 
@@ -152,7 +152,7 @@ print "PSF model created"
 allstar = pexpect.spawn("allstar")
 
 # Set up log file
-fout = file('allstar_log.txt','w')
+fout = file(image_nf+'_allstar_log.txt','w')
 allstar.logfile = fout
 
 allstar.expect('OPT>')
@@ -175,6 +175,7 @@ allstar.expect('Name for subtracted image')
 allstar.sendline("")
 
 # Exit allstar
+allstar.expect("Good bye.")
 allstar.close(force=True)
 
 print "ALLSTAR run on PSF stars and neighbours"
