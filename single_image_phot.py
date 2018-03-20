@@ -70,7 +70,7 @@ shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
 shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		RUN DAOPHOT - FIRST PASS
+		RUN DAOPHOT TO CREATE PSF MODEL
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 print 'Opening DAOPHOT...'
@@ -147,11 +147,10 @@ while psf_done != 'done':
 
 print "PSF model created"
 
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		RUN ALLSTAR - FIRST PASS
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# Now do ALLSTAR on this first pass PSF model
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		RUN ALLSTAR ON ALL STARS IN IMAGE
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 allstar = pexpect.spawn("allstar")
 
@@ -166,13 +165,15 @@ allstar.sendline(image_nf)
 allstar.expect('File with the PSF')
 allstar.sendline("")
 
-# Fit PSF model only to the PSF stars and their neighbours first
+# Fit PSF model to all stars
 allstar.expect('Input file')
-allstar.sendline(".nei")
+allstar.sendline("")
 
 # Creates .als file
 allstar.expect('File for results')
 allstar.sendline("")
+# allstar.expect('New output file name')
+# allstar.sendline("")
 
 # Creates _dns file
 allstar.expect('Name for subtracted image')
@@ -182,43 +183,17 @@ allstar.sendline("")
 allstar.expect("Good bye.")
 allstar.close(force=True)
 
-print "ALLSTAR run on PSF stars and neighbours"
+print "All stars now have psf magnitudes and have been subtracted"
 
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		RUN DAOPHOT - SECOND PASS - PHOTOMETRY ON NEIGHBOUR SUBTRACTED IMAGE
+		DELETE FILES NO LONGER NEEDED
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-daophot = pexpect.spawn("daophot")
-
-# Set up log file
-fout = file(image_nf+'_daophot_log.txt','w')
-daophot.logfile = fout
-
-daophot.expect("Command:")
-daophot.sendline("at " + image_nf)
-
-# Substar to create image with no neighbours of PSF stars
-daophot.expect("Command:")
-daophot.sendline("su")
-daophot.expect("File with the PSF")
-daophot.sendline("")
-daophot.expect("File with photometry")
-daophot.sendline(".als")
-daophot.expect("Do you have stars to leave in?")
-daophot.sendline("y")
-daophot.expect("File with star list")
-daophot.sendline("")
-daophot.expect("Name for subtracted image")
-daophot.sendline("")
-
-# Exit daophot
-daophot.expect("Command:")
-daophot.sendline("exit")
-daophot.close(force=True)
-
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		RUN ALLSTAR - SECOND PASS
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Remove any previous runs
+extensions = ['.coo', '.nei', '.psf', '_allstar_log.txt', '_daophot_log.txt']
+for ext in extensions:
+	if (os.path.isfile(image_nf+ext)):
+		os.remove(image_nf+ext)	
 
 print "Photometry on " + image_nf + " complete"
