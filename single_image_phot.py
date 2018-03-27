@@ -40,7 +40,8 @@ print 'Currently working on file:' + image
 
 ## Get absolute path of image as need to move to this directory
 
-home = '/home/ac833/Data/'
+home = '/home/ac833/HV00872_comparison/' # for current project
+#home = '/home/ac833/Data/' # for project in general
     
 directories = os.listdir(home)
 
@@ -190,10 +191,10 @@ print "All stars now have psf magnitudes and have been subtracted"
 		DELETE FILES NO LONGER NEEDED
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# Remove any files not needed
-extensions = ['.coo', '.nei', '.psf', '_allstar_log.txt', '_daophot_log.txt']
-for ext in extensions:
-	if (os.path.isfile(image_nf+ext)):
-		os.remove(image_nf+ext)	
+# # Remove any files not needed
+# extensions = ['.coo', '.nei', '.psf', '_allstar_log.txt', '_daophot_log.txt']
+# for ext in extensions:
+# 	if (os.path.isfile(image_nf+ext)):
+# 		os.remove(image_nf+ext)	
 
 print "Photometry on " + image_nf + " complete"
