@@ -32,7 +32,7 @@ def find_bcd_a_home():
 	    frames.append(file.rstrip()) # writes all filenames to the list and also removes the '\n' 
 
 	# Root data directory of where the files will be stored
-	root = '/home/ac833/Data_New/'
+	root = '/home/ac833/Data/'
 
 	# Places each file in the list in its correct place
 	for filename in frames:
