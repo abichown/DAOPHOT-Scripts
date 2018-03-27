@@ -1,6 +1,7 @@
 '''
 Purpose: Sort all 'r...' folders into a better file structure in my home directory
 New file structure: Data > Galaxy > BCD/PBCD > Star > Channel > Epoch > dither
+Must create Data folder with subdirectories for each Galaxy and BCD and PBCD folders prior to running
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -11,7 +12,7 @@ import glob
 import fnmatch
 
 # This is a searching script that looks for all files in the file system called certain things
-os.chdir('/home/ac833/Python/')
+os.chdir('/home/ac833/Python-Scripts/')
 from search_files import unsorted_files
 
 def find_bcd_a_home():
@@ -31,7 +32,7 @@ def find_bcd_a_home():
 	    frames.append(file.rstrip()) # writes all filenames to the list and also removes the '\n' 
 
 	# Root data directory of where the files will be stored
-	root = '/home/ac833/Data/'
+	root = '/home/ac833/Data_New/'
 
 	# Places each file in the list in its correct place
 	for filename in frames:
@@ -107,11 +108,11 @@ def find_bcd_a_home():
 	    if counter != 0:
 	        dither = dither + 5
 	    
-	    # Make dither directory if it doesn't already exist
-	    pathname = root + str(galaxy) + '/' + str(bcd_or_pbcd.upper()) + '/' + str(cepheid) + '/' + str(channel) + '/e' + epoch + '/d' + str(dither)
+	    # # Make dither directory if it doesn't already exist
+	    # pathname = root + str(galaxy) + '/' + str(bcd_or_pbcd.upper()) + '/' + str(cepheid) + '/' + str(channel) + '/e' + epoch + '/d' + str(dither)
 
-	    if os.path.exists(pathname) == False:
-	        os.mkdir(pathname)
+	    # if os.path.exists(pathname) == False:
+	    #     os.mkdir(pathname)
 	    
 	    if channel == 'ch1':
 	        ch = '3p6um'
