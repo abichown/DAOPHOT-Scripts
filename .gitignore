@@ -5,3 +5,4 @@ full_procedure.tex
 ..gitignore.swp
 LaTeX_images/
 .gitignore.save
+file_setup.pyc
