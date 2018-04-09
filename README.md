@@ -5,7 +5,7 @@
 The scripts should be performed in this order:
 1. file_setup.py - give all your files sensible names and put them in a more logical directory structure
 2. convert_to_counts.ipynb - convert all the files in new file system to counts
-2. aper_phot.py - find the stars & perform aperture photometry
+2. aper_phot.py - find the stars & perform aperture photometry. Each row of the input file is of the following format: STAR_NAME CHANNEL EPOCH 
 3. Pick stars & creation of PSF
 4. Apply PSF model & subtract stars
 5. Apply zero point correction and calibrate aperture to standard system
