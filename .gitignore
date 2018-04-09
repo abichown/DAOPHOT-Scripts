@@ -6,3 +6,4 @@ full_procedure.tex
 LaTeX_images/
 .gitignore.save
 file_setup.pyc
+.ipynb_checkpoints/
