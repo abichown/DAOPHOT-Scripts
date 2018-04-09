@@ -1,6 +1,6 @@
 '''
-Purpose: Really a practice of how to control DAOPHOT with Python but also script to
-do initial aperture photometry
+Purpose: Reads in list of star names, channel and epoch. For a given star and epoch, FIND stars 
+and does aperture PHOT on them
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -10,114 +10,124 @@ import shutil
 import os
 import fnmatch
 import re
+import pandas as pd
 
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		INITIAL SETUP
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Open list of star names
+stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Star','Channel','Epoch'])
 
-# Info entered on command line to identify the image to work on
-target_name = sys.argv[1]
-channel = sys.argv[2]
-epoch_number = sys.argv[3]
-dither_number = sys.argv[4]
+# Iterate over every line in text file
+for i in range(0, len(stars)):
 
-# Convert channel number to wavelength
-if channel == '1' or channel == '3p6' or channel == '3p6um' or channel == 'ir1':
-	wavelength = '3p6um'
-elif channel == '2' or channel == '4p5' or channel == '4p5um' or channel == 'ir2':
-	wavelength = '4p5um'
-else: wavelength = 'channel not defined'
 
-# Get epoch number into right format
-if len(epoch_number) == 1:
-	epoch_number = '0' + epoch_number
+    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		    INITIAL SETUP
+    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# File to work on
-image = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn.fits'
-image_nf =  target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn'
-
-print 'Currently working on file:' + image
-
-## Get absolute path of image as need to move to this directory
-
-home = '/home/ac833/Data/'
+    # Grab name of target star
+    target_name = stars['Star'][i]
     
-directories = os.listdir(home)
+    # Grab channel
+    if stars['Channel'][i] == 1:
+        wavelength = '3p6um'
+    elif stars['Channel'][i] == 2:
+        wavelength = '4p5um'
+    else: wavelength = 'channel not defined'
+    
+    # Grab epoch 
+    if stars['Epoch'][i] < 10:
+        epoch_number = '0' + str(stars['Epoch'][i])
+    else: epoch_number = str(stars['Epoch'][i])
+        
+    for j in range(1,11):
+        
+	    # Dither number
+	    dither_number = str(j)
+	       
+	    # File to work on
+	    image = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn.fits'
+	    image_nf =  image.replace('.fits','')
 
-for directory in directories:
-	for root,dirs,files in os.walk(home+directory):
-		for filename in files:
-			if fnmatch.fnmatch(filename,image): 
-				path_to_image = os.path.join(home,root) +'/'
+	    print 'Currently working on file:' + image
 
-print 'Changed directory to where the image is: ' + path_to_image
-os.chdir(path_to_image)
+	    home = '/home/ac833/Data/'
 
-# Remove any previous runs
-extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits', '_log.txt']
-for ext in extensions:
-	if (os.path.isfile(image_nf+ext)):
-		os.remove(image_nf+ext)
+	    directories = os.listdir(home)
 
-# Copy daophot options file to current working directory
-if channel == '1':
-	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
-if channel == '2':
-	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+	    for directory in directories:
+			for root,dirs,files in os.walk(home+directory):
+				for filename in files:
+					if fnmatch.fnmatch(filename,image): 
+						path_to_image = os.path.join(home,root) +'/'
 
-# Copy aperture photometry options files to current working directory
-shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
+	    # print 'Changed directory to where the image is: ' + path_to_image
+	    os.chdir(path_to_image)
 
+		# Remove any previous runs
+	    extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits', '_log.txt']
+	    for ext in extensions:
+		    if (os.path.isfile(image_nf+ext)):
+			    os.remove(image_nf+ext)
 
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		RUN DAOPHOT
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		# Copy daophot options file to current working directory
+	    if wavelength == '3p6um':
+		    shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+	    if wavelength == '4p5um':
+		    shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
 
-print 'Opening DAOPHOT...'
+		# Copy aperture photometry options files to current working directory
+	    shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
 
-daophot = pexpect.spawn("daophot")
+	    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+	     		RUN DAOPHOT
+	    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# Set up log file
-fout = file(image_nf+'_log.txt','w')
-daophot.logfile = fout
+	    # print 'Opening DAOPHOT...'
 
-# Attach the image
-daophot.expect("Command:")
-daophot.sendline("aT " + image_nf)
+	    daophot = pexpect.spawn("daophot")
 
-print 'Attached file: ' + image_nf
+		# Set up log file
+	    fout = file(image_nf+'_log.txt','w')
+	    daophot.logfile = fout
 
-# Find the stars
-daophot.expect("Command:")
-daophot.sendline("fi")
-daophot.expect("Number of frames averaged, summed:")
-daophot.sendline("1,1")
-daophot.expect("File for positions")
-daophot.sendline("")
-daophot.expect("Are you happy with this?")
-daophot.sendline("y")
+		# Attach the image
+	    daophot.expect("Command:")
+	    daophot.sendline("at " + image_nf)
 
-print "FIND complete"
+	    # print 'Attached file: ' + image_nf
 
-# Aperture photometry
+		# Find the stars
+	    daophot.expect("Command:")
+	    daophot.sendline("fi")
+	    daophot.expect("Number of frames averaged, summed:")
+	    daophot.sendline("1,1")
+	    daophot.expect("File for positions")
+	    daophot.sendline("")
+	    daophot.expect("Are you happy with this?")
+	    daophot.sendline("y")
 
-daophot.expect("Command:")
-daophot.sendline("ph")
-daophot.expect("File with aperture radii")
-daophot.sendline("")
-daophot.expect("PHO>")
-daophot.sendline("")
-daophot.expect("Input position file")
-daophot.sendline(image_nf + ".coo")
-daophot.expect("Output file")
-daophot.sendline(image_nf + ".ap")
+	    # print "FIND complete"
 
-print "PHOT complete"
+		# Aperture photometry
 
-# Exit daophot
+	    daophot.expect("Command:")
+	    daophot.sendline("ph")
+	    daophot.expect("File with aperture radii")
+	    daophot.sendline("")
+	    daophot.expect("PHO>")
+	    daophot.sendline("")
+	    daophot.expect("Input position file")
+	    daophot.sendline(image_nf + ".coo")
+	    daophot.expect("Output file")
+	    daophot.sendline(image_nf + ".ap")
 
-daophot.expect("Command:")
-daophot.sendline("exit")
-daophot.close(force=True)
+	    # print "PHOT complete"
 
-print "Aperture phot magnitudes for detected stars complete"
+		# Exit daophot
+
+	    daophot.expect("Command:")
+	    daophot.sendline("exit")
+	    daophot.close(force=True)
+
+	    print "Image complete"
+
+print 'FIND and PHOT done for all dithers at these epochs for these stars'
