@@ -13,7 +13,7 @@ import re
 import pandas as pd
 
 # Open list of star names
-stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Star','Channel','Epoch'])
+stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
 
 # Iterate over every line in text file
 for i in range(0, len(stars)):
@@ -23,7 +23,8 @@ for i in range(0, len(stars)):
 		    INITIAL SETUP
     '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-    # Grab name of target star
+    # Grab name of target star and galaxy
+    galaxy = stars['Galaxy'][i]
     target_name = stars['Star'][i]
     
     # Grab channel
@@ -51,13 +52,18 @@ for i in range(0, len(stars)):
 
 	    home = '/home/ac833/Data/'
 
-	    directories = os.listdir(home)
+	    # directories = os.listdir(home)
 
-	    for directory in directories:
-			for root,dirs,files in os.walk(home+directory):
-				for filename in files:
-					if fnmatch.fnmatch(filename,image): 
-						path_to_image = os.path.join(home,root) +'/'
+	  #   for directory in directories:
+			# for root,dirs,files in os.walk(home+directory):
+			# 	for filename in files:
+			# 		if fnmatch.fnmatch(filename,image): 
+			# 			path_to_image = os.path.join(home,root) +'/'
+
+	    for root,dirs,files in os.walk(home+galaxy):
+		    for filename in files:
+			    if fnmatch.fnmatch(filename,image):
+				    path_to_image = os.path.join(home,root) + '/'
 
 	    # print 'Changed directory to where the image is: ' + path_to_image
 	    os.chdir(path_to_image)
