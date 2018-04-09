@@ -7,3 +7,4 @@ LaTeX_images/
 .gitignore.save
 file_setup.pyc
 .ipynb_checkpoints/
+full_procedure.dvi
