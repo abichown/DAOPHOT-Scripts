@@ -57,9 +57,9 @@ def median(row_of_df):
 	print "Working on star: " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
 
 	# Remove any previous runs of this particular script - needs completing
-	# extensions = []
-	# for ext in extensions:
-	# 	for i in range(0,11):
+	#extensions = ['']
+	#for ext in extensions:
+	 #	for i in range(0,11):
 	# 		if (os.path.isfile(target_name + '_' + wavelength + '_e' + epoch_number + '_d' + ))
 	# 	if (os.path.isfile(image_nf+ext)):
 	# 		os.remove(image_nf+ext)
@@ -93,13 +93,18 @@ def median(row_of_df):
 	# Open .mch file to check coefficients
 	coeffs = pd.read_csv(stem+'_f1.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
 
-	print coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]
-
-
-
-
+	if len(coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]) == 5:
+		if len(coeffs[(coeffs['F'] < 1.01) & (coeffs['F'] > 0.99)]) == 5:
+			if len(coeffs[(coeffs['D'] < 0.01) & (coeffs['D'] > -0.01)]) == 5:
+				if len(coeffs[(coeffs['E'] < 0.01) & (coeffs['E'] > -0.01)]) == 5:
+					print "All good"
+				else: print "Coeff E is bad"
+			else: print "Coeff D is bad"
+		else: print "Coeff F is bad"
+	else: print "Coeff C is bad"
 
 	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
+	daomaster = pexpect.spawn('daomaster')
 
 	# Run MONTAGE2 to actually make medianed image
 
