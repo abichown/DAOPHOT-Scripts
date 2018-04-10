@@ -16,13 +16,8 @@ import pexpect
 import os
 import fnmatch
 
-# Table of channels, start and end dithers for each image to be made
-# images_to_make = [[1,1,5],[2,6,10],[1,6,10],[2,1,5]]
-
 # Make medianed image function to call
 def median(row_of_df, start_dither):
-
-	# MAKE HOME OF IMAGES CURRENT WORKING DIRECTORY
 
 	# Grab galaxy, star name, channel and epoch
 
@@ -41,9 +36,11 @@ def median(row_of_df, start_dither):
 		epoch_number = '0' + str(df['Epoch'][i])
 	else: epoch_number = str(df['Epoch'][i])
 
-	# File to work on - this is the dither 1 image for this epoch
-	# image = target_name + '_' + wavelength + '_e' + epoch_number + '_d1_cbcd_dn.fits'
-	# image_nf =  target_name + '_' + wavelength + '_e' + epoch_number + '_d1_cbcd_dn'
+	if start_dither == 1:
+		field = '1'
+	elif start_dither == 6:
+		field = '2'
+	else: field = 'Invalid start dither'
 
     # Find absolute path of where images are
 	home = '/home/ac833/Data/'
@@ -63,12 +60,12 @@ def median(row_of_df, start_dither):
 		os.remove(stem+'_daomatch_log.txt')
 	if (os.path.isfile(stem+'_daomaster_log.txt')):
 		os.remove(stem+'_daomaster_log.txt')
-	if (os.path.isfile(stem+'_f1.mch')):
-		os.remove(stem+'_f1.mch')
-	if (os.path.isfile(stem+'_f1.mch_mast')):
-		os.remove(stem+'_f1.mch_mast')
-	if (os.path.isfile(stem+'_f1.fits')):
-		os.remove(stem+'_f1.fits')
+	if (os.path.isfile(stem+'_f'+field+'.mch')):
+		os.remove(stem+'_f'+field+'.mch')
+	if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
+		os.remove(stem+'_f'+field+'.mch_mast')
+	if (os.path.isfile(stem+'_f'+field+'.fits')):
+		os.remove(stem+'_f'+field+'.fits')
 
 	# Spawn DAOMATCH - put through the each BCD for the correct dithers
 	daomatch = pexpect.spawn('daomatch')
@@ -81,7 +78,7 @@ def median(row_of_df, start_dither):
 	daomatch.expect("Master input file:")
 	daomatch.sendline(stem+'_d'+str(start_dither)+'_cbcd_dn.ap') # Give it the first BCD phot file
 	daomatch.expect("Output file name")
-	daomatch.sendline(stem+'_f1.mch')
+	daomatch.sendline(stem+'_f'+field+'.mch')
 	daomatch.expect("Next input file:")
 	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.ap') # Give it the second BCD phot file
 	daomatch.expect("Next input file")
@@ -93,17 +90,17 @@ def median(row_of_df, start_dither):
 	daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
 
-	print "DAOMATCH has made preliminary coordinate transformations"
-	print "Checking how good they are..."
+	#print "DAOMATCH has made preliminary coordinate transformations"
+	#print "Checking how good they are..."
 
 	# Open .mch file to check coefficients
-	coeffs = pd.read_csv(stem+'_f1.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
+	coeffs = pd.read_csv(stem+'_f'+field+'.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
 
 	if len(coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]) == 5:
 		if len(coeffs[(coeffs['F'] < 1.01) & (coeffs['F'] > 0.99)]) == 5:
 			if len(coeffs[(coeffs['D'] < 0.01) & (coeffs['D'] > -0.01)]) == 5:
 				if len(coeffs[(coeffs['E'] < 0.01) & (coeffs['E'] > -0.01)]) == 5:
-					print "All coefficients are good"
+					#print "All coefficients are good"
 				else: 
 					print "Coeff E is bad"
 			else: 
@@ -121,7 +118,7 @@ def median(row_of_df, start_dither):
 	daomaster.logfile = fout
 
 	daomaster.expect("File with list of input files:")
-	daomaster.sendline(stem+'_f1.mch')
+	daomaster.sendline(stem+'_f'+field+'.mch')
 	daomaster.expect("Minimum number, minimum fraction, enough frames:")
 	daomaster.sendline("2, 0.5, 5") # play around with these values
 	daomaster.expect("Maximum sigma:")
@@ -152,7 +149,7 @@ def median(row_of_df, start_dither):
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("y")
 	daomaster.expect("Output file name")
-	daomaster.sendline(stem+'_f1.mch_mast')
+	daomaster.sendline(stem+'_f'+field+'.mch_mast')
 	daomaster.expect("A file with the transfer table?")
 	daomaster.sendline("e") # exits rest of options
 
@@ -165,7 +162,7 @@ def median(row_of_df, start_dither):
 	montage2.logfile = fout
 
 	montage2.expect("File with transformations:")
-	montage2.sendline(stem+'_f1.mch_mast')
+	montage2.sendline(stem+'_f'+field+'.mch_mast')
 	montage2.expect("Image-name suffix:")
 	montage2.sendline("")
 	montage2.expect("Minimum number of frames, percentile:")
@@ -179,7 +176,7 @@ def median(row_of_df, start_dither):
 	montage2.expect("Determine sky from overlap region?")
 	montage2.sendline("n")
 	montage2.expect("Name for output image")
-	montage2.sendline(stem+'_f1')
+	montage2.sendline(stem+'_f'+field)
 
 	# Write down X and Y offsets
 	log = open(stem+'_montage_log.txt', 'r')
@@ -189,27 +186,14 @@ def median(row_of_df, start_dither):
 	# Add back in sky value 
 	# THIS IS GETTING THE ERROR OF FLOATING POINT INVALID OPERATION WHEN TRYING TO DO THIS THROUGH IRAF
 
-	return(0)
+	return("Complete")
 
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
 
-# # Loop over each row in txt file
-
-for i in range(0, 2): # len(df)
-	median(i, 1)
-
-# for i in range(0, len(df)):
-
-# 	# Make the 5 images described above
-# 	for j in range(0, len(images_to_make)):
-
-# 		if # element of images_to_make is only one so only one filter
-
-# 		median(i, images_to_make[j][0], images_to_make[j][1], images_to_make[j][2])
-
-# 		else # it is combining two filters
-
-
-
+# Loop over each row in txt file
+# Also loop over the two dither combinations
+for i in range(0, len(df)):
+	for j in [1,6]:
+		median(i,j)
 
