@@ -4,8 +4,7 @@ Purpose: Create a medianed image from a set of BCDs. Will make a total of 5 medi
 2. Ch2 d6-10 
 3. Ch1 d6-10
 4. Ch2 d1-5
-5. Ch1 d6-10 and Ch2 d1-5 combined
-Images 3-5 have target V* star present. Images 1 and 2 do not.
+Images 4 & 5 have target V* star present. Images 1 and 2 do not.
 Input is the same txt file 
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
@@ -18,8 +17,7 @@ import os
 import fnmatch
 
 # Table of channels, start and end dithers for each image to be made
-# images_to_make = [[1,1,5],[2,6,10],[1,6,10],[2,1,5],[[1,6,10],[2,1,5]]]
-
+# images_to_make = [[1,1,5],[2,6,10],[1,6,10],[2,1,5]]
 
 # Make medianed image function to call
 def median(row_of_df):
@@ -181,6 +179,7 @@ def median(row_of_df):
 	offsets = [split[-31], split[-30]]
 
 	# Add back in sky value 
+	# THIS IS GETTING THE ERROR OF FLOATING POINT INVALID OPERATION WHEN TRYING TO DO THIS THROUGH IRAF
 
 	return(0)
 
@@ -189,7 +188,7 @@ df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy
 
 # # Loop over each row in txt file
 
-for i in range(0, 1): # len(df)
+for i in range(0, 2): # len(df)
 	median(i)
 
 # for i in range(0, len(df)):
