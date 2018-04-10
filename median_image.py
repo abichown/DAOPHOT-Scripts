@@ -20,7 +20,7 @@ import fnmatch
 # images_to_make = [[1,1,5],[2,6,10],[1,6,10],[2,1,5]]
 
 # Make medianed image function to call
-def median(row_of_df):
+def median(row_of_df, start_dither):
 
 	# MAKE HOME OF IMAGES CURRENT WORKING DIRECTORY
 
@@ -30,8 +30,10 @@ def median(row_of_df):
 	target_name = df['Star'][i]
 
 	if df['Channel'][i] == 1:
+		channel = 1
 		wavelength = '3p6um'
 	elif df['Channel'][i] == 2:
+		channel = 2
 		wavelength = '4p5um'
 	else: wavelength = 'channel not defined'
 
@@ -71,17 +73,17 @@ def median(row_of_df):
 
 	# Give DAOMATCH all the 5 dithers to be used in making the medianed image
 	daomatch.expect("Master input file:")
-	daomatch.sendline(stem+'_d1_cbcd_dn.ap') # Give it the d1 BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither)+'_cbcd_dn.ap') # Give it the first BCD phot file
 	daomatch.expect("Output file name")
 	daomatch.sendline(stem+'_f1.mch')
 	daomatch.expect("Next input file:")
-	daomatch.sendline(stem+'_d2_cbcd_dn.ap') # Give it the d2 BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.ap') # Give it the second BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d3_cbcd_dn.ap') # Give it the d3 BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.ap') # Give it the third BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d4_cbcd_dn.ap') # Give it the d4 BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.ap') # Give it the fourth BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d5_cbcd_dn.ap') # Give it the d5 BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.ap') # Give it the fifth BCD phot file
 	daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
 
@@ -123,7 +125,7 @@ def median(row_of_df):
 	daomaster.expect("Critical match-up radius:")
 	daomaster.sendline("7") # play around with this
 
-	for dither in range(2,6):
+	for dither in range(start_dither+1,start_dither+5):
 		daomaster.expect(stem+'_d'+str(dither)+'_cbcd_dn.ap')
 		daomaster.sendline("")
 
@@ -189,7 +191,7 @@ df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy
 # # Loop over each row in txt file
 
 for i in range(0, 2): # len(df)
-	median(i)
+	median(i, 1)
 
 # for i in range(0, len(df)):
 
