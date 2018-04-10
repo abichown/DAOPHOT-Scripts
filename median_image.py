@@ -124,14 +124,10 @@ def median(row_of_df):
 	daomaster.sendline("6") # solve for 6 degrees of freedom
 	daomaster.expect("Critical match-up radius:")
 	daomaster.sendline("7") # play around with this
-	daomaster.expect(stem+'_d2_cbcd_dn.ap')
-	daomaster.sendline("")
-	daomaster.expect(stem+'_d3_cbcd_dn.ap')
-	daomaster.sendline("")
-	daomaster.expect(stem+'_d4_cbcd_dn.ap')
-	daomaster.sendline("")
-	daomaster.expect(stem+'_d5_cbcd_dn.ap')
-	daomaster.sendline("")
+
+	for dither in range(2,6):
+		daomaster.expect(stem+'_d'+str(dither)+'_cbcd_dn.ap')
+		daomaster.sendline("")
 
 	# Repeat with decreasing match up size
 	for match_up in range(7,-1,-1):
