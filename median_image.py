@@ -136,7 +136,7 @@ def median(row_of_df):
 	# Repeat with decreasing match up size
 	for match_up in range(7,-1,-1):
 		daomaster.expect("New match-up radius")
-		daomaster.sendline(match_up)
+		daomaster.sendline(str(match_up))
 
 	# Options for different output files - only want transformations according to cookbook
 	daomaster.expect("Assign new star IDs?")
