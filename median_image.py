@@ -152,7 +152,33 @@ def median(row_of_df):
 
 	# Run MONTAGE2 to actually make medianed image
 
+	montage2 = pexpect.spawn('montage2')
+
+	# Set up log file
+	fout = file(stem+'_montage_log.txt','w')
+	montage2.logfile = fout
+
+	montage2.expect("File with transformations:")
+	montage2.sendline(stem+'_f1.mch_mast')
+	montage2.expect("Image-name suffix:")
+	montage2.sendline("")
+	montage2.expect("Minimum number of frames, percentile:")
+	montage2.sendline("2,0.5") # play around with minimum number of frames
+	montage2.expect("X limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Y limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Expansion factor:")
+	montage2.sendline("1") # creates image with same scale as bcd images
+	montage2.expect("Determine sky from overlap region?")
+	montage2.sendline("n")
+	montage2.expect("Name for output image")
+	montage2.sendline(stem+'_f1')
+
 	# Write down X and Y offsets
+	log = open(stem+'_montage_log.txt', 'r')
+	split = log.read().split()
+	offsets = [split[-31], split[-30]]
 
 	# Add back in sky value 
 
