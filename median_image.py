@@ -49,14 +49,55 @@ def median(row_of_df):
 	home = '/home/ac833/Data/'
 
 	cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
+	stem = target_name + '_' + wavelength + '_e' + epoch_number
 
 	# Change directory to where image is
 	os.chdir(cwd)
 
 	print "Working on star: " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
 
-	# Run DAOMATCH - put through the each BCD for the correct dithers
-	# pexpect.spawn('')
+	# Remove any previous runs of this particular script - needs completing
+	# extensions = []
+	# for ext in extensions:
+	# 	for i in range(0,11):
+	# 		if (os.path.isfile(target_name + '_' + wavelength + '_e' + epoch_number + '_d' + ))
+	# 	if (os.path.isfile(image_nf+ext)):
+	# 		os.remove(image_nf+ext)
+
+	# Spawn DAOMATCH - put through the each BCD for the correct dithers
+	daomatch = pexpect.spawn('daomatch')
+
+	# Set up log file
+	fout = file(stem+'_daomatch_log.txt','w')
+	daomatch.logfile = fout
+
+	# Give DAOMATCH all the 5 dithers to be used in making the medianed image
+	daomatch.expect("Master input file:")
+	daomatch.sendline(stem+'_d1_cbcd_dn.ap') # Give it the d1 BCD phot file
+	daomatch.expect("Output file name")
+	daomatch.sendline(stem+'_f1.mch')
+	daomatch.expect("Next input file:")
+	daomatch.sendline(stem+'_d2_cbcd_dn.ap') # Give it the d2 BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(stem+'_d3_cbcd_dn.ap') # Give it the d3 BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(stem+'_d4_cbcd_dn.ap') # Give it the d4 BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(stem+'_d5_cbcd_dn.ap') # Give it the d5 BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline("") # exit
+
+	print "DAOMATCH has made preliminary coordinate transformations"
+	print "Checking how good they are..."
+
+	# Open .mch file to check coefficients
+	coeffs = pd.read_csv(stem+'_f1.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
+
+	print coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]
+
+
+
+
 
 	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
 
@@ -73,7 +114,7 @@ df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy
 
 # # Loop over each row in txt file
 
-for i in range(0, len(df)):
+for i in range(0, 1): # len(df)
 	median(i)
 
 # for i in range(0, len(df)):
