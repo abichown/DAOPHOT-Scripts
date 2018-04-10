@@ -56,13 +56,19 @@ def median(row_of_df, start_dither):
 
 	print "Working on star: " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
 
-	# Remove any previous runs of this particular script - needs completing
-	#extensions = ['']
-	#for ext in extensions:
-	 #	for i in range(0,11):
-	# 		if (os.path.isfile(target_name + '_' + wavelength + '_e' + epoch_number + '_d' + ))
-	# 	if (os.path.isfile(image_nf+ext)):
-	# 		os.remove(image_nf+ext)
+	# Remove any previous runs of this particular script
+	if (os.path.isfile(stem+'_montage_log.txt')):
+		os.remove(stem+'_montage_log.txt')
+	if (os.path.isfile(stem+'_daomatch_log.txt')):
+		os.remove(stem+'_daomatch_log.txt')
+	if (os.path.isfile(stem+'_daomaster_log.txt')):
+		os.remove(stem+'_daomaster_log.txt')
+	if (os.path.isfile(stem+'_f1.mch')):
+		os.remove(stem+'_f1.mch')
+	if (os.path.isfile(stem+'_f1.mch_mast')):
+		os.remove(stem+'_f1.mch_mast')
+	if (os.path.isfile(stem+'_f1.fits')):
+		os.remove(stem+'_f1.fits')
 
 	# Spawn DAOMATCH - put through the each BCD for the correct dithers
 	daomatch = pexpect.spawn('daomatch')
