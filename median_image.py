@@ -97,14 +97,62 @@ def median(row_of_df):
 		if len(coeffs[(coeffs['F'] < 1.01) & (coeffs['F'] > 0.99)]) == 5:
 			if len(coeffs[(coeffs['D'] < 0.01) & (coeffs['D'] > -0.01)]) == 5:
 				if len(coeffs[(coeffs['E'] < 0.01) & (coeffs['E'] > -0.01)]) == 5:
-					print "All good"
-				else: print "Coeff E is bad"
-			else: print "Coeff D is bad"
-		else: print "Coeff F is bad"
-	else: print "Coeff C is bad"
+					print "All coefficients are good"
+				else: 
+					print "Coeff E is bad"
+			else: 
+				print "Coeff D is bad"
+		else: 
+			print "Coeff F is bad"
+	else: 
+		print "Coeff C is bad"
 
 	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
 	daomaster = pexpect.spawn('daomaster')
+
+	# Set up log file
+	fout = file(stem+'_daomaster_log.txt','w')
+	daomaster.logfile = fout
+
+	daomaster.expect("File with list of input files:")
+	daomaster.sendline(stem+'_f1.mch')
+	daomaster.expect("Minimum number, minimum fraction, enough frames:")
+	daomaster.sendline("2, 0.5, 5") # play around with these values
+	daomaster.expect("Maximum sigma:")
+	daomaster.sendline("0.5") # play around with this value
+	daomaster.expect("Your choice:")
+	daomaster.sendline("6") # solve for 6 degrees of freedom
+	daomaster.expect("Critical match-up radius:")
+	daomaster.sendline("7") # play around with this
+	daomaster.expect(stem+'_d2_cbcd_dn.ap')
+	daomaster.sendline("")
+	daomaster.expect(stem+'_d3_cbcd_dn.ap')
+	daomaster.sendline("")
+	daomaster.expect(stem+'_d4_cbcd_dn.ap')
+	daomaster.sendline("")
+	daomaster.expect(stem+'_d5_cbcd_dn.ap')
+	daomaster.sendline("")
+
+	# Repeat with decreasing match up size
+	for match_up in range(7,-1,-1):
+		daomaster.expect("New match-up radius")
+		daomaster.sendline(match_up)
+
+	# Options for different output files - only want transformations according to cookbook
+	daomaster.expect("Assign new star IDs?")
+	daomaster.sendline("y") # assign new ids so all frames have same ids
+	daomaster.expect("A file with mean magnitudes and scatter?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with corrected magnitudes and errors?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with raw magnitudes and errors?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with the new transformations?")
+	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline(stem+'_f1.mch_mast')
+	daomaster.expect("A file with the transfer table?")
+	daomaster.sendline("e") # exits rest of options
 
 	# Run MONTAGE2 to actually make medianed image
 
