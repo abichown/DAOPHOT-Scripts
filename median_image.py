@@ -188,6 +188,20 @@ def median(row_of_df, start_dither):
 
 	return("Complete")
 
+def find_stars(row_of_df):
+
+	# Run DAOPHOT 
+
+	# Set up logfile
+
+	# Attach medianed image
+
+	# Experiment with threshold to find the value near the 'elbow' of the curve
+
+	# Then run FIND with this desired threshold
+
+	# Run PHOT
+
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
 
