@@ -250,6 +250,9 @@ def find_stars(row_of_df, start_dither):
 	daophot.sendline("ex")
 	daophot.close(force=True)
 
+	# Copy allstar option file if it doesn't already exist in cwd
+	shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
+
 	# Open ALLSTAR
 	allstar = pexpect.spawn('allstar')
 
@@ -284,6 +287,16 @@ def find_stars(row_of_df, start_dither):
 
 	return(0)
 
+def run_allframe(row_of_df, start_dither):
+
+	# Open ALLFRAME
+
+	# Give it all the files it needs
+
+	# Replace endings in MCH file with .als 
+
+	return(0)
+
 
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -292,9 +305,6 @@ def find_stars(row_of_df, start_dither):
 
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
-
-# Copy allstar option file if it doesn't already exist in cwd
-shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
 
 # Loop over each row in txt file
 # Also loop over the two dither combinations
@@ -348,7 +358,8 @@ for i in range(0, len(df)):
 			os.remove(stem+'_f'+field+'.fits')
 
 
-		# MAKE MEDIANED IMAGE
+		# MAKE MEDIANED IMAGE - OUTPUT OF MEDIAN FUNCTION IS THE X AND Y OFFSETS THAT NEED 
+		# TO BE APPLIED IN FIND STARS
 		xyoff = median(i,j)
 
 		# FIND STARS ON MEDIANED IMAGE
