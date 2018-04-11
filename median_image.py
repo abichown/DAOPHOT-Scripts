@@ -137,7 +137,7 @@ def median(row_of_df, start_dither):
 	# Add back in sky value 
 	# THIS IS GETTING THE ERROR OF FLOATING POINT INVALID OPERATION WHEN TRYING TO DO THIS THROUGH IRAF
 
-	return("Complete")
+	return(offsets)
 
 # Find stars of medianed image
 def find_stars(row_of_df, start_dither):
@@ -242,7 +242,7 @@ def find_stars(row_of_df, start_dither):
 	daophot.sendline("")
 	daophot.expect("Input position file")
 	daophot.sendline("")
-	daophot.expect("Ouput file")
+	daophot.expect("Output file")
 	daophot.sendline("")
 
 	# Close DAOPHOT
@@ -268,11 +268,19 @@ def find_stars(row_of_df, start_dither):
 
 	# Run DAOPHOT ONE LAST TIME
 	daophot = pexpect.spawn('daophot')
-	
 
+	daophot.expect("Command:")
+	daophot.sendline("off") # offsets to put x and y back in
+	daophot.expect("Input file name:")
+	daophot.sendline(stem + '_f' + field + '.als') # output file from ALLSTAR
+	daophot.expect("Additive offsets ID, DX, DY, DMAG:")
+	daophot.sendline("0," + xyoff[0] + "," + xyoff[1] + ",0")
+	daophot.expect("Output file name")
+	daophot.sendline(stem + '_f' + field + '.mag')
 
-
-
+	daophot.expect("Command:")
+	daophot.sendline("exit")
+	daophot.close(force=True)
 
 	return(0)
 
@@ -341,7 +349,7 @@ for i in range(0, len(df)):
 
 
 		# MAKE MEDIANED IMAGE
-		median(i,j)
+		xyoff = median(i,j)
 
 		# FIND STARS ON MEDIANED IMAGE
 		find_stars(i,j)
