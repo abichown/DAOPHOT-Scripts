@@ -19,53 +19,7 @@ import fnmatch
 # Make medianed image function to call
 def median(row_of_df, start_dither):
 
-	# Grab galaxy, star name, channel and epoch
-
-	galaxy = df['Galaxy'][i]
-	target_name = df['Star'][i]
-
-	if df['Channel'][i] == 1:
-		channel = 1
-		wavelength = '3p6um'
-	elif df['Channel'][i] == 2:
-		channel = 2
-		wavelength = '4p5um'
-	else: wavelength = 'channel not defined'
-
-	if df['Epoch'][i] < 10:
-		epoch_number = '0' + str(df['Epoch'][i])
-	else: epoch_number = str(df['Epoch'][i])
-
-	if start_dither == 1:
-		field = '1'
-	elif start_dither == 6:
-		field = '2'
-	else: field = 'Invalid start dither'
-
-    # Find absolute path of where images are
-	home = '/home/ac833/Data/'
-
-	cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
-	stem = target_name + '_' + wavelength + '_e' + epoch_number
-
-	# Change directory to where image is
-	os.chdir(cwd)
-
-	print "Working on star: " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
-
-	# Remove any previous runs of this particular script
-	if (os.path.isfile(stem+'_montage_log.txt')):
-		os.remove(stem+'_montage_log.txt')
-	if (os.path.isfile(stem+'_daomatch_log.txt')):
-		os.remove(stem+'_daomatch_log.txt')
-	if (os.path.isfile(stem+'_daomaster_log.txt')):
-		os.remove(stem+'_daomaster_log.txt')
-	if (os.path.isfile(stem+'_f'+field+'.mch')):
-		os.remove(stem+'_f'+field+'.mch')
-	if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
-		os.remove(stem+'_f'+field+'.mch_mast')
-	if (os.path.isfile(stem+'_f'+field+'.fits')):
-		os.remove(stem+'_f'+field+'.fits')
+	print "Making median image of star: " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
 
 	# Spawn DAOMATCH - put through the each BCD for the correct dithers
 	daomatch = pexpect.spawn('daomatch')
@@ -93,22 +47,18 @@ def median(row_of_df, start_dither):
 	#print "DAOMATCH has made preliminary coordinate transformations"
 	#print "Checking how good they are..."
 
-	# Open .mch file to check coefficients
-	coeffs = pd.read_csv(stem+'_f'+field+'.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
+	# # Open .mch file to check coefficients
+	# coeffs = pd.read_csv(stem+'_f'+field+'.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
 
-	if len(coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]) == 5:
-		if len(coeffs[(coeffs['F'] < 1.01) & (coeffs['F'] > 0.99)]) == 5:
-			if len(coeffs[(coeffs['D'] < 0.01) & (coeffs['D'] > -0.01)]) == 5:
-				if len(coeffs[(coeffs['E'] < 0.01) & (coeffs['E'] > -0.01)]) == 5:
-					#print "All coefficients are good"
-				else: 
-					print "Coeff E is bad"
-			else: 
-				print "Coeff D is bad"
-		else: 
-			print "Coeff F is bad"
-	else: 
-		print "Coeff C is bad"
+	# if len(coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]) == 5:
+	# 	if len(coeffs[(coeffs['F'] < 1.01) & (coeffs['F'] > 0.99)]) == 5:
+	# 		if len(coeffs[(coeffs['D'] < 0.01) & (coeffs['D'] > -0.01)]) == 5:
+	# 			if len(coeffs[(coeffs['E'] < 0.01) & (coeffs['E'] > -0.01)]) == 5:
+	# 				#print "All coefficients are good"
+	# 		    else: print "Coeff E is bad"
+	# 	    else: print "Coeff D is bad"
+	#     else: print "Coeff F is bad"
+ #    else: print "Coeff C is bad"
 
 	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
 	daomaster = pexpect.spawn('daomaster')
@@ -188,19 +138,59 @@ def median(row_of_df, start_dither):
 
 	return("Complete")
 
-def find_stars(row_of_df):
+# Find stars of medianed image
+def find_stars(row_of_df, start_dither):
 
-	# Run DAOPHOT 
+	print "Finding stars of " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
+
+	# Run DAOPHOT
+	daophot = pexpect.spawn('daophot') 
 
 	# Set up logfile
+	fout = file(stem+'_daophot_log.txt','w')
+	daophot.logfile = fout
 
 	# Attach medianed image
+	daophot.expect("Command:")
+	daophot.sendline("AT " + stem + '_f' + field + '.fits')
 
 	# Experiment with threshold to find the value near the 'elbow' of the curve
+	daophot.expect("Command:")
+	daophot.sendline("opt")
+	daophot.expect("File with parameters")
+	daophot.sendline("")
+	daophot.expect("OPT>")
+	daophot.sendline("th=2") # set initial threshold to 2
+	daophot.expect("OPT>")
+	daophot.sendline("")
+
+	daophot.expect("Command:")
+	daophot.sendline("fi")
+	daophot.expect("Number of frames averaged, summed:")
+	daophot.sendline("5,1") # for this work with 5 dithers making the median image
+	daophot.expect("File for positions")
+	daophot.sendline("")
+
+	# Needs to store the number of detections for the threshold
+
+
+
+
+
+
+
 
 	# Then run FIND with this desired threshold
 
 	# Run PHOT
+
+	return(0)
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+			MAIN PART OF PROGRAM TO LOOP OVER ALL STARS
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
@@ -209,5 +199,59 @@ df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy
 # Also loop over the two dither combinations
 for i in range(0, len(df)):
 	for j in [1,6]:
+		
+		# INITIAL SETUP 
+
+		galaxy = df['Galaxy'][i]
+		target_name = df['Star'][i]
+
+		if df['Channel'][i] == 1:
+			channel = 1
+			wavelength = '3p6um'
+		elif df['Channel'][i] == 2:
+			channel = 2
+			wavelength = '4p5um'
+		else: wavelength = 'channel not defined'
+
+		if df['Epoch'][i] < 10:
+			epoch_number = '0' + str(df['Epoch'][i])
+		else: epoch_number = str(df['Epoch'][i])
+
+		if j == 1:
+			field = '1'
+		elif j == 6:
+			field = '2'
+		else: field = 'Invalid start dither'
+
+    	# Find absolute path of where images are
+		home = '/home/ac833/Data/'
+
+		cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
+		stem = target_name + '_' + wavelength + '_e' + epoch_number
+
+		# Change directory to where image is
+		os.chdir(cwd)
+
+		# Remove any previous runs of this particular script
+		if (os.path.isfile(stem+'_montage_log.txt')):
+			os.remove(stem+'_montage_log.txt')
+		if (os.path.isfile(stem+'_daomatch_log.txt')):
+			os.remove(stem+'_daomatch_log.txt')
+		if (os.path.isfile(stem+'_daomaster_log.txt')):
+			os.remove(stem+'_daomaster_log.txt')
+		if (os.path.isfile(stem+'_f'+field+'.mch')):
+			os.remove(stem+'_f'+field+'.mch')
+		if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
+			os.remove(stem+'_f'+field+'.mch_mast')
+		if (os.path.isfile(stem+'_f'+field+'.fits')):
+			os.remove(stem+'_f'+field+'.fits')
+
+
+		# MAKE MEDIANED IMAGE
 		median(i,j)
+
+		# FIND STARS ON MEDIANED IMAGE
+		find_stars(i,j)
+
+		# RUN ALLFRAME ON MEDIANED IMAGE
 
