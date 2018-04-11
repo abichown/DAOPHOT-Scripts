@@ -307,8 +307,35 @@ def run_allframe(row_of_df, start_dither):
 		allstar.expect("Name for subtracted image")
 		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dns')
 
+	# Change .ap file names in .mch file to .als
+
+	# Read in the file
+	with open('HV00872_3p6um_e01_f1.mch_mast', 'r') as file:
+  		filedata = file.read()
+
+	# Replace the target string
+	filedata = filedata.replace('.ap', '.als')
+
+	# Write the file out again
+	with open('HV00872_3p6um_e01_f1.mch_mast', 'w') as file:
+  		file.write(filedata)
+
+
+	# The .mch_mast file now has .als endings as required for allframe
+
+	# Copy allframe option file if it doesn't already exist in cwd
+	# CURRENTLY HAVEN'T MADE ONE
+	# shutil.copy('/home/ac833/daophot-options-files/allframe.opt', 'allframe.opt')
 
 	# Open ALLFRAME
+	# allframe = pexpect.spawn('allframe')
+
+	# allframe.expect("OPT>")
+	# allframe.sendline("")
+	# allframe.expect("File with list of images:")
+	# allframe.sendline()
+
+
 
 	# Give it all the files it needs
 
