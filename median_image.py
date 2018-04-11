@@ -289,6 +289,8 @@ def find_stars(row_of_df, start_dither):
 
 def run_allframe(row_of_df, start_dither):
 
+	print "Running ALLFRAME on " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
+
 	# Run allstar on every aper phot file for each bcd image
 	for i in range(start_dither, start_dither+5):
 
@@ -307,7 +309,7 @@ def run_allframe(row_of_df, start_dither):
 		allstar.expect("Name for subtracted image")
 		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dns')
 
-	# Change .ap file names in .mch file to .als
+	# Change .ap file names in .mch_mast file to .als
 
 	# Read in the file
 	with open('HV00872_3p6um_e01_f1.mch_mast', 'r') as file:
@@ -320,26 +322,19 @@ def run_allframe(row_of_df, start_dither):
 	with open('HV00872_3p6um_e01_f1.mch_mast', 'w') as file:
   		file.write(filedata)
 
-
-	# The .mch_mast file now has .als endings as required for allframe
-
 	# Copy allframe option file if it doesn't already exist in cwd
 	# CURRENTLY HAVEN'T MADE ONE
 	# shutil.copy('/home/ac833/daophot-options-files/allframe.opt', 'allframe.opt')
 
 	# Open ALLFRAME
-	# allframe = pexpect.spawn('allframe')
+	allframe = pexpect.spawn('allframe')
 
-	# allframe.expect("OPT>")
-	# allframe.sendline("")
-	# allframe.expect("File with list of images:")
-	# allframe.sendline()
-
-
-
-	# Give it all the files it needs
-
-	# Replace endings in MCH file with .als 
+	allframe.expect("OPT>")
+	allframe.sendline("")
+	allframe.expect("File with list of images:")
+	allframe.sendline(stem + '_f' + field + '.mch_mast')
+	allframe.expect("File with list of stars")
+	allframe.sendline(stem + '_f' + field + '.mag')
 
 	return(0)
 
