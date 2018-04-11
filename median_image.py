@@ -15,6 +15,7 @@ import sys
 import pexpect
 import os
 import fnmatch
+import shutil
 
 # Make medianed image function to call
 def median(row_of_df, start_dither):
@@ -212,8 +213,66 @@ def find_stars(row_of_df, start_dither):
 		threshold = i+2 # this is the desired threshold
 
 	# Then run FIND with this desired threshold
+	daophot.expect("Command:")
+	daophot.sendline("opt")
+	daophot.expect("File with parameters")
+	daophot.sendline("")
+	daophot.expect("OPT>")
+	daophot.sendline("th="+str(threshold)) # now set to best threshold
+	daophot.expect("OPT>")
+	daophot.sendline("")
+
+	daophot.expect("Command:")
+	daophot.sendline("fi")
+	daophot.expect("Number of frames averaged, summed:")
+	daophot.sendline("5,1") # for this work with 5 dithers making the median image
+	daophot.expect("File for positions")
+	daophot.sendline("")
+	daophot.expect("New output file name")
+	daophot.sendline("")
+	daophot.expect("Are you happy with this?")
+	daophot.sendline("y")
 
 	# Run PHOT
+	daophot.expect("Command:")
+	daophot.sendline("ph")
+	daophot.expect("File with aperture radii")
+	daophot.sendline("")
+	daophot.expect("PHO>")
+	daophot.sendline("")
+	daophot.expect("Input position file")
+	daophot.sendline("")
+	daophot.expect("Ouput file")
+	daophot.sendline("")
+
+	# Close DAOPHOT
+	daophot.expect("Command:")
+	daophot.sendline("ex")
+	daophot.close(force=True)
+
+	# Open ALLSTAR
+	allstar = pexpect.spawn('allstar')
+
+	allstar.expect("OPT>")
+	allstar.sendline("")
+	allstar.expect("Input image name:")
+	allstar.sendline(stem + '_f' + field + '.fits')
+	allstar.expect("File with the PSF")
+	allstar.sendline(stem+'_d1_cbcd_dn.psf')
+	allstar.expect("Input file")
+	allstar.sendline(stem + '_f' + field + '.ap')
+	allstar.expect("File for results")
+	allstar.sendline(stem + '_f' + field + '.als')
+	allstar.expect("Name for subtracted image")
+	allstar.sendline(stem + '_f' + field + 's')
+
+	# Run DAOPHOT ONE LAST TIME
+	daophot = pexpect.spawn('daophot')
+	
+
+
+
+
 
 	return(0)
 
@@ -225,6 +284,9 @@ def find_stars(row_of_df, start_dither):
 
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
+
+# Copy allstar option file if it doesn't already exist in cwd
+shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
 
 # Loop over each row in txt file
 # Also loop over the two dither combinations
