@@ -187,6 +187,30 @@ def find_stars(row_of_df, start_dither):
 	daophot.expect("Are you happy with this?")
 	daophot.sendline("y")
 
+	# Open log file, extract number of detections at each threshold
+	# Then work out the ratio between two consecutive detections
+	# Once ratio exceeds 0.6, this is the desired threshold
+	log = open(stem+'_daophot_log.txt', 'r')
+	split = log.read().split()
+
+	num_det = []
+
+	for i in range(0,18):
+		index = -8 -i*40
+		num_det.append(split[index])
+
+	# Reverse order so threshold increases and detections decrease
+	num_det = num_det[::-1]
+
+	# Now find optimal threshold near elbow of curve
+	ratio = 0
+	i = 0
+
+	while ratio < 0.6:
+		i += 1
+		ratio = float(num_det[i])/float(num_det[i-1])
+		threshold = i+2 # this is the desired threshold
+
 	# Then run FIND with this desired threshold
 
 	# Run PHOT
