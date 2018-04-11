@@ -289,6 +289,25 @@ def find_stars(row_of_df, start_dither):
 
 def run_allframe(row_of_df, start_dither):
 
+	# Run allstar on every aper phot file for each bcd image
+	for i in range(start_dither, start_dither+5):
+
+		allstar = pexpect.spawn('allstar')
+
+		allstar.expect("OPT>")
+		allstar.sendline("")
+		allstar.expect("Input image name:")
+		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.fits')
+		allstar.expect("File with the PSF")
+		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.psf')
+		allstar.expect("Input file")
+		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.ap')
+		allstar.expect("File for results")
+		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.als')
+		allstar.expect("Name for subtracted image")
+		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dns')
+
+
 	# Open ALLFRAME
 
 	# Give it all the files it needs
@@ -366,4 +385,5 @@ for i in range(0, len(df)):
 		find_stars(i,j)
 
 		# RUN ALLFRAME ON MEDIANED IMAGE
+		run_allframe(i,j)
 
