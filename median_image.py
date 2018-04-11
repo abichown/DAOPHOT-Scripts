@@ -152,7 +152,7 @@ def find_stars(row_of_df, start_dither):
 
 	# Attach medianed image
 	daophot.expect("Command:")
-	daophot.sendline("AT " + stem + '_f' + field + '.fits')
+	daophot.sendline("at " + stem + '_f' + field + '.fits')
 
 	# Experiment with threshold to find the value near the 'elbow' of the curve
 	daophot.expect("Command:")
@@ -172,13 +172,20 @@ def find_stars(row_of_df, start_dither):
 	daophot.sendline("")
 
 	# Needs to store the number of detections for the threshold
+	for threshold in range(3,20):
 
+		daophot.expect("Are you happy with this?")
+		daophot.sendline("n")
+		daophot.expect("New threshold")
+		daophot.sendline(str(threshold))
+		daophot.expect("Output file name")
+		daophot.sendline("")
+		daophot.expect("New output file name")
+		daophot.sendline("")
 
-
-
-
-
-
+	# Last threshold = 20
+	daophot.expect("Are you happy with this?")
+	daophot.sendline("y")
 
 	# Then run FIND with this desired threshold
 
