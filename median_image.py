@@ -334,7 +334,7 @@ def run_allframe(row_of_df, start_dither):
 	allframe.expect("File with list of images:")
 	allframe.sendline(stem + '_f' + field + '.mch_mast')
 	allframe.expect("File with list of stars")
-	allframe.sendline(stem + '_f' + field + '.mag')
+	allframe.sendline(stem + '_f' + field + '.mag')7
 
 	return(0)
 
