@@ -39,7 +39,7 @@ for i in range(0, len(stars)):
 
 	print "Working on " + image_nf
 
-    # Find absolute path of image
+    # Find absolute path of image	
 	home = '/home/ac833/Data/'
     
 	for root,dirs,files in os.walk(home+galaxy):
