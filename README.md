@@ -7,7 +7,7 @@ The scripts should be performed in this order:
 2. convert_to_counts.ipynb - convert all the files in new file system to counts
 2. aper_phot.py - find the stars & perform aperture photometry.
 3. psf_creation.py - pick stars & creation of PSF for one dither. Then copies this PSF model to the other nine dithers.
-4. Apply PSF model & subtract stars
+4. median_image.py - make the median image, find the stars in it and use ALLFRAME to perform the photometry.
 5. Apply zero point correction and calibrate aperture to standard system
 6. Aperture correction
 7. Location correction
