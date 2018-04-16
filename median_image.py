@@ -92,6 +92,8 @@ def median(row_of_df, start_dither):
 	daomaster.sendline("n")
 	daomaster.expect("A file with raw magnitudes and errors?")
 	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline(stem + '_f' + field + '.raw')
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("y")
 	daomaster.expect("Output file name")
@@ -267,6 +269,10 @@ def find_stars(row_of_df, start_dither):
 	# Run DAOPHOT ONE LAST TIME
 	daophot = pexpect.spawn('daophot')
 
+	# Set up logfile
+	fout = file(stem+'_daophot_log.txt','w')
+	daophot.logfile = fout
+
 	daophot.expect("Command:")
 	daophot.sendline("off") # offsets to put x and y back in
 	daophot.expect("Input file name:")
@@ -276,8 +282,6 @@ def find_stars(row_of_df, start_dither):
 	daophot.expect("Output file name")
 	daophot.sendline(stem + '_f' + field + '.mag')
 
-	daophot.expect("Command:")
-	daophot.sendline("exit")
 	daophot.close(force=True)
 
 	return(0)
@@ -307,7 +311,7 @@ def run_allframe(row_of_df, start_dither):
 	# Change .ap file names in .mch_mast file to .als
 
 	# Read in the file
-	with open('HV00872_3p6um_e01_f1.mch_mast', 'r') as file:
+	with open('HV00872_3p6um_e'+ epoch_number + '_f1.mch_mast', 'r') as file:
   		filedata = file.read()
 
 	# Replace the target string
