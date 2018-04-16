@@ -96,7 +96,7 @@ def median(row_of_df, start_dither):
 	daomaster.expect("A file with corrected magnitudes and errors?")
 	daomaster.sendline("n")
 	daomaster.expect("A file with raw magnitudes and errors?")
-	daomaster.sendline("n")
+	daomaster.sendline("y")
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("y")
 	daomaster.expect("Output file name")
@@ -334,7 +334,7 @@ def run_allframe(row_of_df, start_dither):
 	allframe.expect("File with list of images:")
 	allframe.sendline(stem + '_f' + field + '.mch_mast')
 	allframe.expect("File with list of stars")
-	allframe.sendline(stem + '_f' + field + '.mag')7
+	allframe.sendline(stem + '_f' + field + '.mag')
 
 	return(0)
 
