@@ -1,11 +1,6 @@
 '''
-Purpose: Create a medianed image from a set of BCDs. Will make a total of 5 medianed images.
-1. Ch1 d1-5 
-2. Ch2 d6-10 
-3. Ch1 d6-10
-4. Ch2 d1-5
-Images 4 & 5 have target V* star present. Images 1 and 2 do not.
-Input is the same txt file 
+Purpose: Create a medianed image from a set of BCDs. Will make 2 medianed images for each row
+of the star list: one for dithers 1-5 and one for dithers 6-10.
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -117,7 +112,7 @@ def median(row_of_df, start_dither):
 	montage2.expect("Image-name suffix:")
 	montage2.sendline("")
 	montage2.expect("Minimum number of frames, percentile:")
-	montage2.sendline("2,0.5") # play around with minimum number of frames
+	montage2.sendline("1,0.5") # play around with minimum number of frames
 	montage2.expect("X limits of output image:")
 	montage2.sendline("e")
 	montage2.expect("Y limits of output image:")
