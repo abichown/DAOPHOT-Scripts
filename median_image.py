@@ -253,6 +253,9 @@ def find_stars(row_of_df, start_dither):
 	# Open ALLSTAR
 	allstar = pexpect.spawn('allstar')
 
+	fout = file(stem+'_allstar_log.txt', 'w')
+	allstar.logfile = fout
+
 	allstar.expect("OPT>")
 	allstar.sendline("")
 	allstar.expect("Input image name:")
@@ -264,7 +267,10 @@ def find_stars(row_of_df, start_dither):
 	allstar.expect("File for results")
 	allstar.sendline(stem + '_f' + field + '.als')
 	allstar.expect("Name for subtracted image")
-	allstar.sendline(stem + '_f' + field + 's')
+	allstar.sendline(stem + '_f' + field + 's.fits')
+
+	allstar.expect("Good bye")
+	allstar.close(force=True)
 
 	# Run DAOPHOT ONE LAST TIME
 	daophot = pexpect.spawn('daophot')
@@ -282,6 +288,8 @@ def find_stars(row_of_df, start_dither):
 	daophot.expect("Output file name")
 	daophot.sendline(stem + '_f' + field + '.mag')
 
+	daophot.expect("Command:")
+	daophot.sendline("ex")
 	daophot.close(force=True)
 
 	return(0)
@@ -308,6 +316,9 @@ def run_allframe(row_of_df, start_dither):
 		allstar.expect("Name for subtracted image")
 		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dns')
 
+		allstar.expect("Good bye")
+		allstar.close(force=True)
+
 	# Change .ap file names in .mch_mast file to .als
 
 	# Read in the file
@@ -318,12 +329,11 @@ def run_allframe(row_of_df, start_dither):
 	filedata = filedata.replace('.ap', '.als')
 
 	# Write the file out again
-	with open('HV00872_3p6um_e01_f1.mch_mast', 'w') as file:
+	with open('HV00872_3p6um_e' + epoch_number + '_f1.mch_mast', 'w') as file:
   		file.write(filedata)
 
 	# Copy allframe option file if it doesn't already exist in cwd
-	# CURRENTLY HAVEN'T MADE ONE
-	# shutil.copy('/home/ac833/daophot-options-files/allframe.opt', 'allframe.opt')
+	shutil.copy('/home/ac833/daophot-options-files/allframe.opt', 'allframe.opt')
 
 	# Open ALLFRAME
 	allframe = pexpect.spawn('allframe')
@@ -334,6 +344,11 @@ def run_allframe(row_of_df, start_dither):
 	allframe.sendline(stem + '_f' + field + '.mch_mast')
 	allframe.expect("File with list of stars")
 	allframe.sendline(stem + '_f' + field + '.mag')
+
+	allframe.expect("Good bye")
+	allframe.close(force=True)
+
+
 
 	return(0)
 
@@ -400,7 +415,8 @@ for i in range(0, len(df)):
 
 		# MAKE MEDIANED IMAGE - OUTPUT OF MEDIAN FUNCTION IS THE X AND Y OFFSETS THAT NEED 
 		# TO BE APPLIED IN FIND STARS
-		xyoff = median(i,j)
+		# DEFINITELY WORKS
+		xyoff = median(i,j) 
 
 		# FIND STARS ON MEDIANED IMAGE
 		find_stars(i,j)
