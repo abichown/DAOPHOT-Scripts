@@ -322,14 +322,14 @@ def run_allframe(row_of_df, start_dither):
 	# Change .ap file names in .mch_mast file to .als
 
 	# Read in the file
-	with open('HV00872_3p6um_e'+ epoch_number + '_f1.mch_mast', 'r') as file:
+	with open('HV00872_' + wavelength + '_e'+ epoch_number + '_f1.mch_mast', 'r') as file:
   		filedata = file.read()
 
 	# Replace the target string
 	filedata = filedata.replace('.ap', '.als')
 
 	# Write the file out again
-	with open('HV00872_3p6um_e' + epoch_number + '_f1.mch_mast', 'w') as file:
+	with open('HV00872_' + wavelength + '_e' + epoch_number + '_f1.mch_mast', 'w') as file:
   		file.write(filedata)
 
 	# Copy allframe option file if it doesn't already exist in cwd
