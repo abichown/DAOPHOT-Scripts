@@ -1,6 +1,8 @@
 '''
-Purpose: Create a medianed image from a set of BCDs. Will make 2 medianed images for each row
-of the star list: one for dithers 1-5 and one for dithers 6-10.
+Purpose: Create a medianed image from a set of BCDs. Will make 2 medianed images for each row.
+of the star list: one for dithers 1-5 and one for dithers 6-10. Then performs allframe 
+photometry. Final file that you want is the .alf file for the field which has the psf mags
+for each star in each frame.
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
