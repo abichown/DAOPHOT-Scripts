@@ -40,22 +40,6 @@ def median(row_of_df, start_dither):
 	daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
 
-	#print "DAOMATCH has made preliminary coordinate transformations"
-	#print "Checking how good they are..."
-
-	# # Open .mch file to check coefficients
-	# coeffs = pd.read_csv(stem+'_f'+field+'.mch', header=None, delim_whitespace=True, usecols=[2,3,4,5,6,7], names=['A', 'B', 'C', 'D', 'E', 'F'])
-
-	# if len(coeffs[(coeffs['C'] < 1.01) & (coeffs['C'] > 0.99)]) == 5:
-	# 	if len(coeffs[(coeffs['F'] < 1.01) & (coeffs['F'] > 0.99)]) == 5:
-	# 		if len(coeffs[(coeffs['D'] < 0.01) & (coeffs['D'] > -0.01)]) == 5:
-	# 			if len(coeffs[(coeffs['E'] < 0.01) & (coeffs['E'] > -0.01)]) == 5:
-	# 				#print "All coefficients are good"
-	# 		    else: print "Coeff E is bad"
-	# 	    else: print "Coeff D is bad"
-	#     else: print "Coeff F is bad"
- #    else: print "Coeff C is bad"
-
 	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
 	daomaster = pexpect.spawn('daomaster')
 
@@ -322,14 +306,14 @@ def run_allframe(row_of_df, start_dither):
 	# Change .ap file names in .mch_mast file to .als
 
 	# Read in the file
-	with open('HV00872_' + wavelength + '_e'+ epoch_number + '_f1.mch_mast', 'r') as file:
+	with open(target_name +'_' + wavelength + '_e'+ epoch_number + '_f'+field+'.mch_mast', 'r') as file:
   		filedata = file.read()
 
 	# Replace the target string
 	filedata = filedata.replace('.ap', '.als')
 
 	# Write the file out again
-	with open('HV00872_' + wavelength + '_e' + epoch_number + '_f1.mch_mast', 'w') as file:
+	with open(target_name+'_' + wavelength + '_e' + epoch_number + '_f'+field+'.mch_mast', 'w') as file:
   		file.write(filedata)
 
 	# Copy allframe option file if it doesn't already exist in cwd
@@ -348,7 +332,87 @@ def run_allframe(row_of_df, start_dither):
 	allframe.expect("Good bye")
 	allframe.close(force=True)
 
+	return(0)
 
+# Match alf files from allframe for each of the BCDs
+def match_alf(row_of_df, start_dither):
+
+	# Change suffix of mch_mast file from als to alf
+	# Read in the file
+	with open(target_name+'_' + wavelength + '_e'+ epoch_number + '_f'+field+'.mch_mast', 'r') as file:
+ 		filedata = file.read()
+
+	# Replace the als with alf
+	filedata = filedata.replace('.als', '.alf')
+
+	# Write the file out again
+	with open(target_name+'_' + wavelength + '_e' + epoch_number + '_f'+field+'.mch_mast', 'w') as file:
+  		file.write(filedata)
+
+
+  	# Now open DAOMATCH to match up the alf files as these are the files you want to obtain magnitudes from!
+  	daomatch = pexpect.spawn('daomatch')
+
+  	#fout = file(stem+'_daomatch_log.txt','w')
+	#daomatch.logfile = fout
+
+	daomatch.expect("Master input file:")
+	daomatch.sendline(stem+'_d'+str(start_dither)+'_cbcd_dn.alf') # Give it the first BCD phot file
+	daomatch.expect("Output file name")
+	daomatch.sendline(stem+'_f'+field+'.mch_alf')
+	daomatch.expect("Next input file:")
+	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.alf') # Give it the second BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.alf') # Give it the third BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.alf') # Give it the fourth BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.alf') # Give it the fifth BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline("") # exit
+	daomatch.expect("Good bye")
+	daomatch.close(force=True)	
+
+	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
+	daomaster = pexpect.spawn('daomaster')
+
+	daomaster.expect("File with list of input files:")
+	daomaster.sendline(stem+'_f'+field+'.mch_alf')
+	daomaster.expect("Minimum number, minimum fraction, enough frames:")
+	daomaster.sendline("2, 0.5, 5") # play around with these values
+	daomaster.expect("Maximum sigma:")
+	daomaster.sendline("0.5") # play around with this value
+	daomaster.expect("Your choice:")
+	daomaster.sendline("6") # solve for 6 degrees of freedom
+	daomaster.expect("Critical match-up radius:")
+	daomaster.sendline("7") # play around with this
+
+	for dither in range(start_dither+1,start_dither+5):
+		daomaster.expect(stem+'_d'+str(dither)+'_cbcd_dn.alf')
+		daomaster.sendline("")
+
+	# Repeat with decreasing match up size
+	for match_up in range(7,-1,-1):
+		daomaster.expect("New match-up radius")
+		daomaster.sendline(str(match_up))
+
+	# Options for different output files - only want transformations according to cookbook
+	daomaster.expect("Assign new star IDs?")
+	daomaster.sendline("y") # assign new ids so all frames have same ids
+	daomaster.expect("A file with mean magnitudes and scatter?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with corrected magnitudes and errors?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with raw magnitudes and errors?")
+	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline(stem + '_f' + field + '.alf')
+	daomaster.expect("A file with the new transformations?")
+	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline(stem+'_f'+field+'.mch_final')
+	daomaster.expect("A file with the transfer table?")
+	daomaster.sendline("e") # exits rest of options		
 
 	return(0)
 
@@ -407,8 +471,8 @@ for i in range(0, len(df)):
 			os.remove(stem+'_daomaster_log.txt')
 		if (os.path.isfile(stem+'_f'+field+'.mch')):
 			os.remove(stem+'_f'+field+'.mch')
-		if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
-			os.remove(stem+'_f'+field+'.mch_mast')
+		#if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
+			#os.remove(stem+'_f'+field+'.mch_mast')
 		if (os.path.isfile(stem+'_f'+field+'.fits')):
 			os.remove(stem+'_f'+field+'.fits')
 
@@ -423,4 +487,7 @@ for i in range(0, len(df)):
 
 		# RUN ALLFRAME ON MEDIANED IMAGE
 		run_allframe(i,j)
+
+		# MATCH ALF FILES
+		match_alf(i,j)
 
