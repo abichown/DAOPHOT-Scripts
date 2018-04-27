@@ -473,8 +473,8 @@ for i in range(0, len(df)):
 			os.remove(stem+'_daomaster_log.txt')
 		if (os.path.isfile(stem+'_f'+field+'.mch')):
 			os.remove(stem+'_f'+field+'.mch')
-		#if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
-			#os.remove(stem+'_f'+field+'.mch_mast')
+		if (os.path.isfile(stem+'_f'+field+'.mch_mast')):
+			os.remove(stem+'_f'+field+'.mch_mast')
 		if (os.path.isfile(stem+'_f'+field+'.fits')):
 			os.remove(stem+'_f'+field+'.fits')
 
