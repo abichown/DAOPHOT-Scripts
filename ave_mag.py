@@ -84,6 +84,49 @@ for i in range(0, len(df)):
 				f = f0 * (10 ** (-data['m_5'][j]/2.5))
 				data.loc[j, 'm_5'] = f
 
+		# Create new columns for average magnitude and errors
+		data['m_ave'] = 0
+		data['e_ave'] = 0
 
-        print "Here"
+		# Determine average flux and error
+		for k in range(0, len(data)):
+			total = 0
+			error = 0
+			count = 0
+
+			if data['m_1'][k] != 99.9999:
+				total += data['m_1'][k]
+				error += data['e_1'][k]
+				count += 1
+			if data['m_2'][k] != 99.9999:
+				total += data['m_2'][k]
+				error += data['e_2'][k]
+				count += 1
+			if data['m_3'][k] != 99.9999:
+				total += data['m_3'][k]
+				error += data['e_3'][k]
+				count += 1
+			if data['m_4'][k] != 99.9999:
+				total += data['m_4'][k]
+				error += data['e_4'][k]
+				count += 1
+			if data['m_5'][k] != 99.9999:
+				total += data['m_5'][k]
+				error += data['e_5'][k]
+				count += 1
+
+			data.loc[k, 'm_ave'] = total/count
+			data.loc[k, 'e_ave'] = error/count
+
+		# Convert back to magnitudes
+		for p in range(0, len(data)):
+			m = -2.5 * log10(data['m_ave'][p]/f0)
+			data.loc[p, 'm_ave'] = m
+
+		# Finally, write new values to a file
+		filename = filename.replace('.alf', '.ave')
+		data.to_csv(filename, columns=['ID', 'X', 'Y', 'm_ave', 'e_ave'], header=True, sep=" ", index=None)
+
+
+        print "Complete"
 
