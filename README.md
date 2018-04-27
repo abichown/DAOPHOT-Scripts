@@ -11,8 +11,8 @@ The scripts should be performed in this order:
 5. Apply zero point correction and calibrate aperture to standard system
 6. Aperture correction
 7. Location correction
-8. Pixel phase correction
-9. Extract mag and merr for each image for V* to be analysed
+8. ave_mag - take alf file and calculate average mag and error for each star at each epoch
+9. Extract mag and err for each image for V* to be analysed
 10. Plot light curve
 
 These steps will be updated with the script names as and when I make them.
