@@ -57,7 +57,7 @@ for i in range(0, len(df)):
 
 		# Import data
 		filename = stem + '_f' + field + '.alf'
-		df2 = pd.read_csv(filename, delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'm_1', 'e_1', 'm_2', 'e_2', 'm_3', 'e_3', 'm_4', 'e_4', 'm_5', 'e_5', 'sharp', 'round'])	
+		data = pd.read_csv(filename, delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'm_1', 'e_1', 'm_2', 'e_2', 'm_3', 'e_3', 'm_4', 'e_4', 'm_5', 'e_5', 'sharp', 'round'])	
 
 		# Get right f0 for the channel
 		if wavelength == '3p6um':
@@ -65,4 +65,25 @@ for i in range(0, len(df)):
 		if wavelength == '4p5um':
 			f0 = 179.7
 
-    	print "Here"	
+
+		# Loop over all rows of df to convert any non 99.9999 mags to a flux
+		for j in range(0, len(data)):
+			if data['m_1'][j] != 99.9999:
+				f = f0 * (10 ** (-data['m_1'][j]/2.5))
+				data.loc[j, 'm_1'] = f
+			if data['m_2'][j] != 99.9999:
+				f = f0 * (10 ** (-data['m_2'][j]/2.5))
+				data.loc[j, 'm_2'] = f
+			if data['m_3'][j] != 99.9999:
+				f = f0 * (10 ** (-data['m_3'][j]/2.5))
+				data.loc[j, 'm_3'] = f
+			if data['m_4'][j] != 99.9999:
+				f = f0 * (10 ** (-data['m_4'][j]/2.5))
+				data.loc[j, 'm_4'] = f
+			if data['m_5'][j] != 99.9999:
+				f = f0 * (10 ** (-data['m_5'][j]/2.5))
+				data.loc[j, 'm_5'] = f
+
+
+        print "Here"
+
