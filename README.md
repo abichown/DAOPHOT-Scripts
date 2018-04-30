@@ -12,7 +12,7 @@ The scripts should be performed in this order:
 6. Aperture correction
 7. Location correction
 8. ave_mag - take alf file and calculate average mag and error for each star at each epoch
-9. Extract mag and err for each image for V* to be analysed
+9. get_mag.py - take file created in step 8 for each epoch and find mag and error of V* and write to file to be put through step 10
 10. Plot light curve
 
 These steps will be updated with the script names as and when I make them.
