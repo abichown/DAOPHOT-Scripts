@@ -59,6 +59,8 @@ for i in range(0, len(df)):
 		filename = stem + '_f' + field + '.alf'
 		data = pd.read_csv(filename, delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'm_1', 'e_1', 'm_2', 'e_2', 'm_3', 'e_3', 'm_4', 'e_4', 'm_5', 'e_5', 'sharp', 'round'])	
 
+		print "Working on: " + target_name + '    epoch: ' + epoch_number + '    field: ' + field 
+
 		# Get right f0 for the channel
 		if wavelength == '3p6um':
 			f0 = 280.9
@@ -67,22 +69,22 @@ for i in range(0, len(df)):
 
 
 		# Loop over all rows of df to convert any non 99.9999 mags to a flux
-		for j in range(0, len(data)):
-			if data['m_1'][j] != 99.9999:
-				f = f0 * (10 ** (-data['m_1'][j]/2.5))
-				data.loc[j, 'm_1'] = f
-			if data['m_2'][j] != 99.9999:
-				f = f0 * (10 ** (-data['m_2'][j]/2.5))
-				data.loc[j, 'm_2'] = f
-			if data['m_3'][j] != 99.9999:
-				f = f0 * (10 ** (-data['m_3'][j]/2.5))
-				data.loc[j, 'm_3'] = f
-			if data['m_4'][j] != 99.9999:
-				f = f0 * (10 ** (-data['m_4'][j]/2.5))
-				data.loc[j, 'm_4'] = f
-			if data['m_5'][j] != 99.9999:
-				f = f0 * (10 ** (-data['m_5'][j]/2.5))
-				data.loc[j, 'm_5'] = f
+		for q in range(0, len(data)):
+			if data['m_1'][q] != 99.9999:
+				f = f0 * (10 ** (-data['m_1'][q]/2.5))
+				data.loc[q, 'm_1'] = f
+			if data['m_2'][q] != 99.9999:
+				f = f0 * (10 ** (-data['m_2'][q]/2.5))
+				data.loc[q, 'm_2'] = f
+			if data['m_3'][q] != 99.9999:
+				f = f0 * (10 ** (-data['m_3'][q]/2.5))
+				data.loc[q, 'm_3'] = f
+			if data['m_4'][q] != 99.9999:
+				f = f0 * (10 ** (-data['m_4'][q]/2.5))
+				data.loc[q, 'm_4'] = f
+			if data['m_5'][q] != 99.9999:
+				f = f0 * (10 ** (-data['m_5'][q]/2.5))
+				data.loc[q, 'm_5'] = f
 
 		# Create new columns for average magnitude and errors
 		data['m_ave'] = 0
