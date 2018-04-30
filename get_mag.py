@@ -41,6 +41,33 @@ for star in stars:
 			channel = '2'
 			field = '1' # we want the field with the V* in
 
-		
+		# Open file to write mag and error to 
+		filename = '/home/ac833/Magnitudes/' + galaxy + '/' + star + '_' + wavelength +'.txt'
+		f = open(filename, 'w')
+		f.write("Epoch Mag Error \n")
 
-	print galaxy
+		for epoch in range(1,25):
+
+			# Get epoch in correct form
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			# Change cwd to folder with data in
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star + '/ch' + channel + '/e' + epoch + '/'
+			os.chdir(cwd)
+
+			# Open file containing average magnitudes
+			ave_file = star + '_' + wavelength + '_e' + epoch + '_f' + field + '.ave'
+			ave = pd.read_csv(ave_file, header=0, delim_whitespace=True)
+
+			# Search for star near (133,122)
+			# I've played with these ranges to ensure HV00872 ch1 and ch2 data get included
+			# Might need to be changed
+			for i in range(0, len(ave)):
+				if (ave['X'][i] < 134.00 and ave['X'][i] > 128.00):
+					if (ave['Y'][i] < 124.00 and ave['Y'][i] > 121.00):
+						# write to file
+						f.writelines("%s %f %f \n" % (epoch, float(ave['m_ave'][i]), float(ave['e_ave'][i])))
+
+		f.close()
