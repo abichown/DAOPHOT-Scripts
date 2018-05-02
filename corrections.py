@@ -3,7 +3,10 @@ Purpose: Correct the instrumental magnitudes via zero point, standard aperture, 
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
-import numpy as np 
+import numpy as np
+import pandas as pd 
+from astropy.io import fits
+from math import log10 
 
 # Zero point correction - applied to both ap and psf mags
 def zero_point():
