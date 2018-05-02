@@ -49,6 +49,38 @@ def zero_point(row_of_df, start_dither):
 
 		f.close()
 
+	# Load ap files, apply zmag and write out to file
+	for ap in ap_files:
+
+		# Load data - this is in df's because of the rubbish way .ap files are laid out
+		num_lines = sum(1 for line in open(ap)) # num lines in the ap file
+
+		first_rows = filter(lambda x: x%3 == 1, range(4, num_lines))
+		second_rows = filter(lambda x: x%3 == 2, range(4,num_lines))
+		third_rows = filter(lambda x: x%3 == 0, range(4, num_lines))
+
+		ap_firstlines = pd.read_csv(ap, skiprows=[0,1,2,3]+second_rows+third_rows, names=['ID', 'X', 'Y', 'Mag'], delim_whitespace=True, header=None)
+		ap_secondlines = pd.read_csv(ap, skiprows=[0,1,2,3]+first_rows+third_rows, names=['Sky', 'Std sky', 'Skew sky', 'Error'], delim_whitespace=True, header=None)
+
+		# Concat and drop unneccesary columns
+		ap_df = pd.concat((ap_firstlines, ap_secondlines), axis=1)
+		ap_df.drop(['Sky', 'Std sky', 'Skew sky'], inplace=True, axis=1)
+
+		# Apply zmag to 'Mag' column
+		for z in range(0, len(ap_df)):
+			if ap_df['Mag'][z]!= 99.999:
+				ap_df.ix[z,'Mag'] = ap_df['Mag'][z] - 25 + zmag
+
+		# Write to new file
+		filename = ap.replace('.ap', '.ap_zp')
+		f = open(filename, 'w')
+		f.write("ID  X  Y  Mag  Error \n")
+
+		for z in range(0, len(ap_df)):
+			f.writelines("%d %.3f %.3f %.4f %.4f \n" % (ap_df['ID'][z], ap_df['X'][z], ap_df['Y'][z], ap_df['Mag'][z], ap_df['Error'][z]))
+
+		f.close()
+
 	return(0)
 
 # Get onto standard aperture system - applied to ap mags only
