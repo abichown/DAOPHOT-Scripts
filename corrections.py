@@ -8,7 +8,27 @@ import pandas as pd
 from astropy.io import fits
 from math import log10 
 
-# Zero point correction - applied to both ap and psf mags
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+				MAIN PART
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+# Read in list of stars that need correcting
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Epoch'])
+
+for i in range(0, len(df)):
+	for j in [1,6]: 
+
+		# Initial setup
+
+		# Zero point
+
+		# Standard aperture
+
+		# Aperture correction
+
+		# Location correction
+
+# Zero point correction - applied to both ap and alf mags
 def zero_point():
 	return(0)
 
