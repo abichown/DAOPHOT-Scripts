@@ -30,8 +30,24 @@ def zero_point(row_of_df, start_dither):
 
 	zmag = round(2.5 * log10(F0/(fluxconv*px_ste)), 2)
 
-	# Load files
+	# Load alf files, apply zmag and write out to file
+	for alf in alf_files:
 
+		# Load data
+		id, x, y, m, e = np.loadtxt(alf, skiprows=4, usecols=(0,1,2,3,4), unpack=True)
+
+		# Apply zmag to m
+		m = m - 25 + zmag
+
+		# Write to new file
+		filename = alf.replace('.alf', '.alf_zp')
+		f = open(filename, 'w')
+		f.write("ID  X  Y  Mag  Error \n")
+
+		for z in range(0, len(id)):
+			f.writelines("%d %.3f %.3f %.4f %.4f \n" % (id[z], x[z], y[z], m[z], e[z]))
+
+		f.close()
 
 	return(0)
 
