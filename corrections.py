@@ -71,7 +71,14 @@ def zero_point(row_of_df, start_dither):
 			if ap_df['Mag'][z]!= 99.999:
 				ap_df.ix[z,'Mag'] = ap_df['Mag'][z] - 25 + zmag
 
-				# Convert to fl
+				# Convert mag to flux
+				flux = F0 * (10 ** (-ap_df['Mag'][z]/2.5))
+
+				# Apply standard aperture calibration factor of 1.112
+				flux = 1.112 * flux
+
+				# Convert back to mag
+				ap_df.ix[z, 'Mag'] = -2.5 * log10(flux/F0)
 
 		# Write to new file
 		filename = ap.replace('.ap', '.ap_zp')
