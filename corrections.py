@@ -10,6 +10,43 @@ from math import log10
 import os
 import sys
 
+# Zero point correction - applied to both ap and alf mags
+def zero_point(row_of_df, start_dither):
+
+	# Image name - only need to do it once as they are all using same telescope etc
+	image = stem + '_d1_cbcd_dn.fits'
+
+	# Calculate zmag
+	fits_image = fits.open(image)
+	hdr = fits_image[0].header
+	fluxconv = hdr['fluxconv'] * (10 ** 6) 
+	px_ste = 3.3845 * (10 ** -11) # px size in steradians using online converters
+
+	if channel == 1:
+		F0 = 280.9
+	elif channel == 2:
+		F0 = 179.7
+	else: F0 = 'Invalid'
+
+	zmag = round(2.5 * log10(F0/(fluxconv*px_ste)), 2)
+
+	# Load files
+
+
+	return(0)
+
+# Get onto standard aperture system - applied to ap mags only
+def std_aper():
+	return(0)
+
+# Aperture correction - uses ap and alf mags to calculate correction value then applies to psf mags only
+def ap_corr():
+	return(0)
+
+# Location correction - only need to apply to alf mags as won't be using ap mags after this
+def loc_corr():
+	return(0)
+
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 				MAIN PART
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -61,7 +98,7 @@ for i in range(0, len(df)):
 			alf_files.append(stem + '_d' + str(dither) + '_cbcd_dn.alf')
 
 		# Zero point
-		#zero_point(i,j)
+		zero_point(i,j)
 
 		# Standard aperture
 		#std_aper(i,j)
@@ -71,26 +108,3 @@ for i in range(0, len(df)):
 
 		# Location correction
 		#loc_corr(i,j)
-
-# Zero point correction - applied to both ap and alf mags
-def zero_point(row_of_df, start_dither):
-
-	# Image name - only need to do it once as they are all using same telescope etc
-	image = stem + '_d1_cbcd_dn.fits'
-
-	# Load files
-
-
-	return(0)
-
-# Get onto standard aperture system - applied to ap mags only
-def std_aper():
-	return(0)
-
-# Aperture correction - uses ap and alf mags to calculate correction value then applies to psf mags only
-def ap_corr():
-	return(0)
-
-# Location correction - only need to apply to alf mags as won't be using ap mags after this
-def loc_corr():
-	return(0)
