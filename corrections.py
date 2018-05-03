@@ -11,7 +11,8 @@ import os
 import sys
 
 # Zero point correction - applied to both ap and alf mags
-def zero_point(row_of_df, start_dither):
+# Also standard aperture - applied to only ap mags
+def zp_and_std_ape(row_of_df, start_dither):
 
 	# Image name - only need to do it once as they are all using same telescope etc
 	image = stem + '_d1_cbcd_dn.fits'
@@ -92,16 +93,152 @@ def zero_point(row_of_df, start_dither):
 
 	return(0)
 
-# Get onto standard aperture system - applied to ap mags only
-def std_aper():
-	return(0)
+# Aperture correction - uses ap and als mags for dither 1 to calculate correction value then applies to alf mags only
+def ap_corr(row_of_df, start_dither):
 
-# Aperture correction - uses ap and alf mags to calculate correction value then applies to psf mags only
-def ap_corr():
+	# Get names for dither 1 als and lst files - don't need ap file because lst has ap mags
+	als = stem + '_d1_cbcd_dn.als'
+	lst = stem + '_d1_cbcd_dn.lst'
+
+	# Open files into df's
+	df_lst = pd.read_csv(lst, skiprows=3, header=None, names=['ID_lst', 'X_lst', 'Y_lst', 'ap_mag', 'ap_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
+	df_als = pd.read_csv(als, skiprows=3, header=None, names=['ID_als', 'X_als', 'Y_als', 'psf_mag', 'psf_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
+
+	# Sort values by ID
+	df_lst.sort_values('ID_lst', axis=0, inplace=True)
+	df_als.sort_values('ID_als', axis=0, inplace=True)
+
+	# Then cross-check the lst and als dataframes to only keep stars that appear in both
+	for i in range(0, len(df_als)):
+		match = 0
+		for j in range(0, len(df_lst)):
+			# Check whether IDs match
+			if df_als['ID_als'][i] == df_lst['ID_lst'][j]:
+				match += 1
+
+		# If they match do nothing, else remove row
+		if match == 0:
+			df_als.drop(i, axis=0, inplace=True)
+
+	# Reset index to start at 0
+	df_als.reset_index(drop=True, inplace=True)
+	df_lst.reset_index(drop=True, inplace=True)
+
+	# Now get rid of any lst stars not in als
+	for i in range(0, len(df_lst)):
+		match = 0
+		for j in range(0, len(df_als)):
+			# Check whether IDs match
+			if df_lst['ID_lst'][i] == df_als['ID_als'][j]:
+				match += 1
+
+		# If they match, do nothing, else remove row
+		if match == 0:
+			df_lst.drop(i, axis=0, inplace=True)
+
+	# Reset index again
+	df_als.reset_index(drop=True, inplace=True)
+	df_lst.reset_index(drop=True, inplace=True)
+
+	# Now df_als and df_lst have same stars so can concat 
+	df = pd.concat((df_als, df_lst), axis=1)
+
+	# Remove columns not needed
+	df.drop(['X_lst', 'Y_lst', 'ID_lst'], axis=1, inplace=True) # keep als x and y as better
+
+	# Calculate difference in mag
+	df['Difference'] = df['ap_mag'] - df['psf_mag']
+
+	# Calculate average difference
+	corr_val = round(df['Difference'].mean(), 3)
+
+	# Apply this correction value to all alf files
+	for i in range(start_dither, start_dither+5):
+
+		# Filename
+		filename = stem + '_d' + str(i) + '_cbcd_dn.alf_zp'
+
+		# Open file into df
+		data = pd.read_csv(filename, delim_whitespace=True, header=0)
+
+		# Add corr_val to mag
+		data['Corrected mag'] = data['Mag'] + corr_val
+
+		# Output to a new file suffiz .alf_apc
+		filename = filename.replace('_zp', '_apc')
+		f = open(filename, 'w')
+		f.write("ID   X   Y   Mag    Error  \n")
+
+		for j in range(0, len(data)):
+			f.writelines("%d %.3f %.3f %.4f %.4f \n" % (data['ID'][j], data['X'][j], data['Y'][j], data['Corrected mag'][j], data['Error'][j]))
+
+		f.close()
+
 	return(0)
 
 # Location correction - only need to apply to alf mags as won't be using ap mags after this
-def loc_corr():
+def loc_corr(row_of_df, start_dither):
+
+	# Open correction file corresponding to correct channel
+	if channel == 1:
+		corr_file = '/home/ac833/Spitzer-corr-images/ch1_al_s192.fits'
+		corr_image = fits.open(corr_file)
+		corr_data = corr_image[0].data
+	elif channel == 2:
+		corr_file = '/home/ac833/Spitzer-corr-images/ch2_al_s192.fits'
+		corr_image = fits.open(corr_file)
+		corr_data = corr_image[0].data
+	else: corr_file = 'Corr file not found'
+
+	# Loop over all 5 dithers and correct
+	for i in range(start_dither, start_dither+5):
+
+		# File that needs correcting is the alf_apc file
+		filename = stem + '_d' + str(i) + '_cbcd_dn.alf_apc'
+
+		# Open file into np array
+		id, x, y, m, err = np.loadtxt(filename, usecols=(0,1,2,3,4), unpack=True, skiprows=1)
+
+		# New list of corrected magnitudes
+		newMag_list = []
+
+		# Convert to flux, correct and convert back to mag for each star
+		for star in id:
+
+			# Find the x and y coordinates corresponding to that star
+			x_coord = int(np.floor(float(x[id==star])))
+			y_coord = int(np.floor(float(y[id==star])))
+
+			# Find the mag corresponding to that star
+			mag = float(m[id==star])
+
+			# Find the corr value at that (x_coord, y_coord) pixel
+			corr_val = corr_data[x_coord-1,y_coord-1]
+
+			# Convert to flux
+			flux = 10 ** (mag/-2.5)
+
+			# Apply corr_value
+			flux = flux * corr_val
+
+			# Convert back to mag
+			new_mag = -2.5 * log10(flux)
+
+			# Append to newMag_list
+			newMag_list.append(new_mag)
+
+		# Make new filename by replacing _apc with _all
+		filename = filename.replace('_apc', '_all')
+
+		# Open file and write output
+		f = open(filename, 'w')
+		f.write("ID   X   Y   Mag    Error  \n")
+
+		for j in range(0, len(newMag_list)):
+			f.write("%d %.3f %.3f %.4f %.4f \n" % (id[j], x[j], y[j], newMag_list[j], err[j]))
+
+		f.close()
+
 	return(0)
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -155,13 +292,10 @@ for i in range(0, len(df)):
 			alf_files.append(stem + '_d' + str(dither) + '_cbcd_dn.alf')
 
 		# Zero point
-		zero_point(i,j)
-
-		# Standard aperture
-		#std_aper(i,j)
+		zp_and_std_ape(i,j)
 
 		# Aperture correction
-		#ap_corr(i,j)
+		ap_corr(i,j)
 
 		# Location correction
-		#loc_corr(i,j)
+		loc_corr(i,j)
