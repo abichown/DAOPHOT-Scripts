@@ -32,23 +32,27 @@ def zp_and_std_ape(row_of_df, start_dither):
 	zmag = round(2.5 * log10(F0/(fluxconv*px_ste)), 2)
 
 	# Load alf files, apply zmag and write out to file
-	for alf in alf_files:
+	for alf in field_alf_files:
 
 		# Load data
-		id, x, y, m, e = np.loadtxt(alf, skiprows=4, usecols=(0,1,2,3,4), unpack=True)
+		df = pd.read_csv(alf, header=None, names=['ID', 'X', 'Y', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5', 'chi', 'sharp'], skiprows=3, delim_whitespace=True)
 
-		# Apply zmag to m
-		m = m - 25 + zmag
+		# Apply zmag to m (only to non 99 values)
+		for index in range(0, len(df)):
+			if df['M1'][index] != 99.9999:
+				df.loc[index, 'M1'] = df['M1'][index] - 25 + zmag
+			if df['M2'][index] != 99.9999:
+				df.loc[index, 'M2'] = df['M2'][index] - 25 + zmag				
+			if df['M3'][index] != 99.9999:
+				df.loc[index, 'M3'] = df['M3'][index] - 25 + zmag
+			if df['M4'][index] != 99.9999:
+				df.loc[index, 'M4'] = df['M4'][index] - 25 + zmag
+			if df['M5'][index] != 99.9999:
+				df.loc[index, 'M5'] = df['M5'][index] - 25 + zmag
 
 		# Write to new file
 		filename = alf.replace('.alf', '.alf_zp')
-		f = open(filename, 'w')
-		f.write("ID  X  Y  Mag  Error \n")
-
-		for z in range(0, len(id)):
-			f.writelines("%d %.3f %.3f %.4f %.4f \n" % (id[z], x[z], y[z], m[z], e[z]))
-
-		f.close()
+		df.to_csv(filename, sep=' ')
 
 	# Load ap files, apply zmag and write out to file
 	for ap in ap_files:
@@ -153,26 +157,30 @@ def ap_corr(row_of_df, start_dither):
 	corr_val = round(df['Difference'].mean(), 3)
 
 	# Apply this correction value to all alf files
-	for i in range(start_dither, start_dither+5):
+	for alf in field_alf_files:
 
 		# Filename
-		filename = stem + '_d' + str(i) + '_cbcd_dn.alf_zp'
+		filename = alf.replace('.alf', '.alf_zp')
 
 		# Open file into df
 		data = pd.read_csv(filename, delim_whitespace=True, header=0)
 
 		# Add corr_val to mag
-		data['Corrected mag'] = data['Mag'] + corr_val
+		for index in range(0, len(data)):
+			if data['M1'][index] != 99.9999:
+				data.loc[index, 'M1'] = data['M1'][index] + corr_val
+			if data['M2'][index] != 99.9999:
+				data.loc[index, 'M2'] = data['M2'][index] + corr_val				
+			if data['M3'][index] != 99.9999:
+				data.loc[index, 'M3'] = data['M3'][index] + corr_val
+			if data['M4'][index] != 99.9999:
+				data.loc[index, 'M4'] = data['M4'][index] + corr_val
+			if data['M5'][index] != 99.9999:
+				data.loc[index, 'M5'] = data['M5'][index] + corr_val
 
 		# Output to a new file suffiz .alf_apc
 		filename = filename.replace('_zp', '_apc')
-		f = open(filename, 'w')
-		f.write("ID   X   Y   Mag    Error  \n")
-
-		for j in range(0, len(data)):
-			f.writelines("%d %.3f %.3f %.4f %.4f \n" % (data['ID'][j], data['X'][j], data['Y'][j], data['Corrected mag'][j], data['Error'][j]))
-
-		f.close()
+		data.to_csv(filename, sep=' ')
 
 	return(0)
 
@@ -191,53 +199,52 @@ def loc_corr(row_of_df, start_dither):
 	else: corr_file = 'Corr file not found'
 
 	# Loop over all 5 dithers and correct
-	for i in range(start_dither, start_dither+5):
+	for alf in field_alf_files:
 
 		# File that needs correcting is the alf_apc file
-		filename = stem + '_d' + str(i) + '_cbcd_dn.alf_apc'
+		filename = alf.replace('.alf','.alf_apc')
 
-		# Open file into np array
-		id, x, y, m, err = np.loadtxt(filename, usecols=(0,1,2,3,4), unpack=True, skiprows=1)
-
-		# New list of corrected magnitudes
-		newMag_list = []
+		# Load data into df
+		df = pd.read_csv(filename, header=0, delim_whitespace=True)
 
 		# Convert to flux, correct and convert back to mag for each star
-		for star in id:
+		for index in range(0, len(df)):
 
 			# Find the x and y coordinates corresponding to that star
-			x_coord = int(np.floor(float(x[id==star])))
-			y_coord = int(np.floor(float(y[id==star])))
-
-			# Find the mag corresponding to that star
-			mag = float(m[id==star])
+			x_coord = int(np.floor(float(df['X'][index])))
+			y_coord = int(np.floor(float(df['Y'][index])))
 
 			# Find the corr value at that (x_coord, y_coord) pixel
-			corr_val = corr_data[x_coord-1,y_coord-1]
+			corr_val = corr_data[x_coord, y_coord]
 
-			# Convert to flux
-			flux = 10 ** (mag/-2.5)
-
-			# Apply corr_value
-			flux = flux * corr_val
-
-			# Convert back to mag
-			new_mag = -2.5 * log10(flux)
-
-			# Append to newMag_list
-			newMag_list.append(new_mag)
+			# For each mag column, convert to flux, apply correction and convert back to flux
+			for index in range(0, len(df)):
+				if df['M1'][index] != 99.9999:
+					flux = 10 ** (df['M1'][index]/-2.5)
+					flux = flux * corr_val
+					df.loc[index, 'M1'] = -2.5 * log10(flux)
+				if df['M2'][index] != 99.9999:
+					flux = 10 ** (df['M2'][index]/-2.5)
+					flux = flux * corr_val
+					df.loc[index, 'M2'] = -2.5 * log10(flux)				
+				if df['M3'][index] != 99.9999:
+					flux = 10 ** (df['M3'][index]/-2.5)
+					flux = flux * corr_val
+					df.loc[index, 'M3'] = -2.5 * log10(flux)
+				if df['M4'][index] != 99.9999:
+					flux = 10 ** (df['M4'][index]/-2.5)
+					flux = flux * corr_val
+					df.loc[index, 'M4'] = -2.5 * log10(flux)
+				if df['M5'][index] != 99.9999:
+					flux = 10 ** (df['M5'][index]/-2.5)
+					flux = flux * corr_val
+					df.loc[index, 'M5'] = -2.5 * log10(flux)			
 
 		# Make new filename by replacing _apc with _all
 		filename = filename.replace('_apc', '_all')
 
-		# Open file and write output
-		f = open(filename, 'w')
-		f.write("ID   X   Y   Mag    Error  \n")
-
-		for j in range(0, len(newMag_list)):
-			f.write("%d %.3f %.3f %.4f %.4f \n" % (id[j], x[j], y[j], newMag_list[j], err[j]))
-
-		f.close()
+		# Write csv to file
+		df.to_csv(filename, sep=' ')
 
 	return(0)
 
@@ -282,14 +289,19 @@ for i in range(0, len(df)):
 		# Change working directory to where the data is
 		os.chdir(cwd)
 
-		# Set up names of ap and alf files - have 5 alf and 5 ap files for each epoch
-		# Put them in two lists to make it easier to loop over later
+		# Set up names of ap, alf and field alf files - have 5 alf and 5 ap files for each epoch and 2 field alf files
+		# Put them in three lists to make it easier to loop over later
 		ap_files = []
 		alf_files = []
+		field_alf_files = []
 
 		for dither in range(j, j+5):
 			ap_files.append(stem + '_d' + str(dither) + '_cbcd_dn.ap')
 			alf_files.append(stem + '_d' + str(dither) + '_cbcd_dn.alf')
+
+		for f in [1,2]:
+			field_alf_files.append(stem + '_f' + str(f) + '.alf')
+
 
 		# Zero point
 		zp_and_std_ape(i,j)
