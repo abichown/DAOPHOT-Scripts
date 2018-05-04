@@ -215,6 +215,18 @@ def loc_corr(row_of_df, start_dither):
 			y_coord = int(np.floor(float(df['Y'][index])))
 
 			# Find the corr value at that (x_coord, y_coord) pixel
+			if (x_coord > 0 and x_coord < 256):
+				x_coord = x_coord
+			elif (x_coord <= 0):
+				x_coord = 0
+			else: x_coord = 255 # y_coord > 256
+
+			if (y_coord > 0 and y_coord < 256):
+				y_coord = y_coord
+			elif (y_coord <= 0):
+				y_coord = 0
+			else: y_coord = 255 # y_coord > 256
+
 			corr_val = corr_data[x_coord, y_coord]
 
 			# For each mag column, convert to flux, apply correction and convert back to flux
@@ -288,6 +300,8 @@ for i in range(0, len(df)):
 
 		# Change working directory to where the data is
 		os.chdir(cwd)
+
+		print "Working on: " + str(target_name) + "    Epoch: " + str(epoch_number) + "     Field: " + str(field)
 
 		# Set up names of ap, alf and field alf files - have 5 alf and 5 ap files for each epoch and 2 field alf files
 		# Put them in three lists to make it easier to loop over later

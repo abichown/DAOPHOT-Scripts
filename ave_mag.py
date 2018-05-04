@@ -56,8 +56,8 @@ for i in range(0, len(df)):
 			os.remove(stem+'_f'+field+'.ave')
 
 		# Import data
-		filename = stem + '_f' + field + '.alf'
-		data = pd.read_csv(filename, delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'm_1', 'e_1', 'm_2', 'e_2', 'm_3', 'e_3', 'm_4', 'e_4', 'm_5', 'e_5', 'sharp', 'round'])	
+		filename = stem + '_f' + field + '.alf_all'
+		data = pd.read_csv(filename, delim_whitespace=True, header=0)	
 
 		print "Working on: " + target_name + '    epoch: ' + epoch_number + '    field: ' + field 
 
@@ -70,21 +70,21 @@ for i in range(0, len(df)):
 
 		# Loop over all rows of df to convert any non 99.9999 mags to a flux
 		for q in range(0, len(data)):
-			if data['m_1'][q] != 99.9999:
-				f = f0 * (10 ** (-data['m_1'][q]/2.5))
-				data.loc[q, 'm_1'] = f
-			if data['m_2'][q] != 99.9999:
-				f = f0 * (10 ** (-data['m_2'][q]/2.5))
-				data.loc[q, 'm_2'] = f
-			if data['m_3'][q] != 99.9999:
-				f = f0 * (10 ** (-data['m_3'][q]/2.5))
-				data.loc[q, 'm_3'] = f
-			if data['m_4'][q] != 99.9999:
-				f = f0 * (10 ** (-data['m_4'][q]/2.5))
-				data.loc[q, 'm_4'] = f
-			if data['m_5'][q] != 99.9999:
-				f = f0 * (10 ** (-data['m_5'][q]/2.5))
-				data.loc[q, 'm_5'] = f
+			if data['M1'][q] != 99.9999:
+				f = f0 * (10 ** (-data['M1'][q]/2.5))
+				data.loc[q, 'M1'] = f
+			if data['M2'][q] != 99.9999:
+				f = f0 * (10 ** (-data['M2'][q]/2.5))
+				data.loc[q, 'M2'] = f
+			if data['M3'][q] != 99.9999:
+				f = f0 * (10 ** (-data['M3'][q]/2.5))
+				data.loc[q, 'M3'] = f
+			if data['M4'][q] != 99.9999:
+				f = f0 * (10 ** (-data['M4'][q]/2.5))
+				data.loc[q, 'M4'] = f
+			if data['M5'][q] != 99.9999:
+				f = f0 * (10 ** (-data['M5'][q]/2.5))
+				data.loc[q, 'M5'] = f
 
 		# Create new columns for average magnitude and errors
 		data['m_ave'] = 0
@@ -96,25 +96,25 @@ for i in range(0, len(df)):
 			error = 0
 			count = 0
 
-			if data['m_1'][k] != 99.9999:
-				total += data['m_1'][k]
-				error += data['e_1'][k]
+			if data['M1'][k] != 99.9999:
+				total += data['M1'][k]
+				error += data['E1'][k]
 				count += 1
-			if data['m_2'][k] != 99.9999:
-				total += data['m_2'][k]
-				error += data['e_2'][k]
+			if data['M2'][k] != 99.9999:
+				total += data['M2'][k]
+				error += data['E2'][k]
 				count += 1
-			if data['m_3'][k] != 99.9999:
-				total += data['m_3'][k]
-				error += data['e_3'][k]
+			if data['M3'][k] != 99.9999:
+				total += data['M3'][k]
+				error += data['E3'][k]
 				count += 1
-			if data['m_4'][k] != 99.9999:
-				total += data['m_4'][k]
-				error += data['e_4'][k]
+			if data['M4'][k] != 99.9999:
+				total += data['M4'][k]
+				error += data['E4'][k]
 				count += 1
-			if data['m_5'][k] != 99.9999:
-				total += data['m_5'][k]
-				error += data['e_5'][k]
+			if data['M5'][k] != 99.9999:
+				total += data['M5'][k]
+				error += data['E5'][k]
 				count += 1
 
 			data.loc[k, 'm_ave'] = total/count
@@ -126,7 +126,7 @@ for i in range(0, len(df)):
 			data.loc[p, 'm_ave'] = m
 
 		# Finally, write new values to a file
-		filename = filename.replace('.alf', '.ave')
+		filename = filename.replace('.alf_all', '.ave')
 		data.to_csv(filename, columns=['ID', 'X', 'Y', 'm_ave', 'e_ave'], header=True, sep=" ", index=None)
 
 
