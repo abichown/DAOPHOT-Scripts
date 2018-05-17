@@ -8,12 +8,10 @@ The scripts should be performed in this order:
 2. aper_phot.py - find the stars & perform aperture photometry.
 3. psf_creation.py - pick stars & creation of PSF for one dither. Then copies this PSF model to the other nine dithers.
 4. median_image.py - make the median image, find the stars in it and use ALLFRAME to perform the photometry.
-5. Apply zero point correction and calibrate aperture to standard system
-6. Aperture correction
-7. Location correction
-8. ave_mag - take alf file and calculate average mag and error for each star at each epoch
-9. get_mag.py - take file created in step 8 for each epoch and find mag and error of V* and write to file to be put through step 10
-10. Plot light curve
+5. corrections.py - apply std aperture correction, zero point calibration, aperture correction and location correction. Output is field.alf_all file
+6. ave_mag - take alf_all file from step 5 and calculate average mag, average error and std dev for each star at each epoch. Output is .ave file
+7. get_mag.py - take .ave file created in step 6 for each epoch and find mag, error and std dev of V* and write to file. Saved in Magnitudes directory.
+8. Plot light curve
 
 These steps will be updated with the script names as and when I make them.
 
