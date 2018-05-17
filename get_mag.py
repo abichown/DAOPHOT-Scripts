@@ -44,7 +44,7 @@ for star in stars:
 		# Open file to write mag and error to 
 		filename = '/home/ac833/Magnitudes/' + galaxy + '/' + star + '_' + wavelength +'.txt'
 		f = open(filename, 'w')
-		f.write("Epoch Mag Error \n")
+		f.write("Epoch Mag Error Std_dev \n")
 
 		for epoch in range(1,25):
 
@@ -68,6 +68,6 @@ for star in stars:
 				if (ave['X'][i] < 134.00 and ave['X'][i] > 128.00):
 					if (ave['Y'][i] < 124.00 and ave['Y'][i] > 121.00):
 						# write to file
-						f.writelines("%s %f %f \n" % (epoch, float(ave['m_ave'][i]), float(ave['e_ave'][i])))
+						f.writelines("%s %f %f %f \n" % (epoch, float(ave['m_ave'][i]), float(ave['e_ave'][i]), float(ave['std_dev'][i])))
 
 		f.close()
