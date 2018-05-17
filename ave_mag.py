@@ -9,6 +9,7 @@ Written by: Abi Chown A.H.Chown@bath.ac.uk
 import sys
 import os
 import pandas as pd
+import numpy as np
 from math import sqrt, log10
 
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
@@ -67,6 +68,29 @@ for i in range(0, len(df)):
 		if wavelength == '4p5um':
 			f0 = 179.7
 
+		# Create new columns for average magnitude, average errors and stdev of mags
+		data['m_ave'] = 0
+		data['e_ave'] = 0
+		data['std_dev'] = 0			
+
+		# Calculate standard deviation of the magnitudes
+		for k in range(0, len(data)):
+
+			mags = []
+
+			if data['M1'][k] != 99.9999:
+				mags.append(data['M1'][k])
+			if data['M2'][k] != 99.9999:
+				mags.append(data['M2'][k])
+			if data['M3'][k] != 99.9999:
+				mags.append(data['M3'][k])
+			if data['M4'][k] != 99.9999:
+				mags.append(data['M4'][k])
+			if data['M5'][k] != 99.9999:
+				mags.append(data['M5'][k])
+
+			data.loc[k, 'std_dev'] = np.std(mags)
+
 
 		# Loop over all rows of df to convert any non 99.9999 mags to a flux
 		for q in range(0, len(data)):
@@ -85,10 +109,6 @@ for i in range(0, len(df)):
 			if data['M5'][q] != 99.9999:
 				f = f0 * (10 ** (-data['M5'][q]/2.5))
 				data.loc[q, 'M5'] = f
-
-		# Create new columns for average magnitude and errors
-		data['m_ave'] = 0
-		data['e_ave'] = 0
 
 		# Determine average flux and error
 		for k in range(0, len(data)):
@@ -127,7 +147,7 @@ for i in range(0, len(df)):
 
 		# Finally, write new values to a file
 		filename = filename.replace('.alf_all', '.ave')
-		data.to_csv(filename, columns=['ID', 'X', 'Y', 'm_ave', 'e_ave'], header=True, sep=" ", index=None)
+		data.to_csv(filename, columns=['ID', 'X', 'Y', 'm_ave', 'e_ave', 'std_dev'], header=True, sep=" ", index=None)
 
 
         print "Complete"
