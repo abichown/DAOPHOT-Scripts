@@ -57,7 +57,7 @@ for i in range(0, len(df)):
 			os.remove(stem+'_f'+field+'.ave')
 
 		# Import data
-		filename = stem + '_f' + field + '.alf_all'
+		filename = stem + '_f' + field + '.alf_all' # should be .alf_all but currently just trying two corrections
 		data = pd.read_csv(filename, delim_whitespace=True, header=0)	
 
 		print "Working on: " + target_name + '    epoch: ' + epoch_number + '    field: ' + field 

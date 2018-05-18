@@ -52,7 +52,7 @@ def zp_and_std_ape(row_of_df, start_dither):
 
 		# Write to new file
 		filename = alf.replace('.alf', '.alf_zp')
-		df.to_csv(filename, sep=' ')
+		df.to_csv(filename, sep=' ', index=False)
 
 	# Load ap files, apply zmag and write out to file
 	for ap in ap_files:
@@ -180,7 +180,7 @@ def ap_corr(row_of_df, start_dither):
 
 		# Output to a new file suffiz .alf_apc
 		filename = filename.replace('_zp', '_apc')
-		data.to_csv(filename, sep=' ')
+		data.to_csv(filename, sep=' ', index=False)
 
 	return(0)
 
@@ -256,7 +256,7 @@ def loc_corr(row_of_df, start_dither):
 		filename = filename.replace('_apc', '_all')
 
 		# Write csv to file
-		df.to_csv(filename, sep=' ')
+		df.to_csv(filename, sep=' ', index=False)
 
 	return(0)
 
