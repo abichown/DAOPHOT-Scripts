@@ -18,7 +18,7 @@ df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy
 # Loop over each row in txt file
 # Also loop over the two dither combinations
 for i in range(0, len(df)):
-	for j in [1,6]:
+	for j in [1,6]: 
 
 		# INITIAL SETUP 
 
@@ -53,12 +53,12 @@ for i in range(0, len(df)):
 		os.chdir(cwd)
 
 		# Remove any previous runs of this particular script
-		if (os.path.isfile(stem+'_f'+field+'.ave')):
-			os.remove(stem+'_f'+field+'.ave')
+		if (os.path.isfile(stem+'_f'+field+'_corrected.ave')):
+			os.remove(stem+'_f'+field+'_corrected.ave')
 
 		# Import data
-		filename = stem + '_f' + field + '.alf_all' # should be .alf_all but currently just trying two corrections
-		data = pd.read_csv(filename, delim_whitespace=True, header=0)	
+		filename = stem + '_f' + field + '_corrected.raw'
+		data = pd.read_csv(filename, header=None, delim_whitespace=True, skiprows=3, names=['ID', 'X', 'Y', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5', 'Chi', 'Sharp'])	
 
 		print "Working on: " + target_name + '    epoch: ' + epoch_number + '    field: ' + field 
 
@@ -146,7 +146,7 @@ for i in range(0, len(df)):
 			data.loc[p, 'm_ave'] = m
 
 		# Finally, write new values to a file
-		filename = filename.replace('.alf_all', '.ave')
+		filename = filename.replace('.raw', '.ave')
 		data.to_csv(filename, columns=['ID', 'X', 'Y', 'm_ave', 'e_ave', 'std_dev'], header=True, sep=" ", index=None)
 
 

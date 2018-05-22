@@ -58,7 +58,7 @@ for star in stars:
 			os.chdir(cwd)
 
 			# Open file containing average magnitudes
-			ave_file = star + '_' + wavelength + '_e' + epoch + '_f' + field + '.ave'
+			ave_file = star + '_' + wavelength + '_e' + epoch + '_f' + field + '_corrected.ave'
 			ave = pd.read_csv(ave_file, header=0, delim_whitespace=True)
 
 			# Search for star near (133,122)
