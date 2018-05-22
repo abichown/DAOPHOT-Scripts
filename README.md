@@ -12,7 +12,7 @@ The scripts should be performed in this order:
 6. convert_alf.py - run the .alf_apc and .alf files through here to create files which are in the correct format to be put through DAOMATCH and DAOMASTER
 6. ave_mag - take alf_all file from step 5 and calculate average mag, average error and std dev for each star at each epoch. Output is .ave file
 7. get_mag.py - take .ave file created in step 6 for each epoch and find mag, error and std dev of V* and write to file. Saved in Magnitudes directory.
-8. Plot light curve
+8. plot_lc.py - plot light curve
 
 These steps will be updated with the script names as and when I make them.
 
