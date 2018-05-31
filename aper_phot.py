@@ -12,6 +12,10 @@ import fnmatch
 import re
 import pandas as pd
 
+import time
+start = time.time()
+
+
 # Open list of star names
 stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
 
@@ -48,17 +52,9 @@ for i in range(0, len(stars)):
 	    image = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn.fits'
 	    image_nf =  image.replace('.fits','')
 
-	    print 'Currently working on file:' + image
+	    #print 'Currently working on file:' + image
 
 	    home = '/home/ac833/Data/'
-
-	    # directories = os.listdir(home)
-
-	  #   for directory in directories:
-			# for root,dirs,files in os.walk(home+directory):
-			# 	for filename in files:
-			# 		if fnmatch.fnmatch(filename,image): 
-			# 			path_to_image = os.path.join(home,root) +'/'
 
 	    for root,dirs,files in os.walk(home+galaxy):
 		    for filename in files:
@@ -68,8 +64,8 @@ for i in range(0, len(stars)):
 	    # print 'Changed directory to where the image is: ' + path_to_image
 	    os.chdir(path_to_image)
 
-		# Remove any previous runs
-	    extensions = ['.coo', '.ap', '.lst', '.nei', '.psf', '.als', 's.fits', '_log.txt']
+		# Remove any previous runs of this script
+	    extensions = ['.coo', '.ap']
 	    for ext in extensions:
 		    if (os.path.isfile(image_nf+ext)):
 			    os.remove(image_nf+ext)
@@ -90,10 +86,6 @@ for i in range(0, len(stars)):
 	    # print 'Opening DAOPHOT...'
 
 	    daophot = pexpect.spawn("daophot")
-
-		# Set up log file
-	    fout = file(image_nf+'_log.txt','w')
-	    daophot.logfile = fout
 
 		# Attach the image
 	    daophot.expect("Command:")
@@ -134,6 +126,8 @@ for i in range(0, len(stars)):
 	    daophot.sendline("exit")
 	    daophot.close(force=True)
 
-	    print "Image complete"
 
 print 'FIND and PHOT done for all dithers at these epochs for these stars'
+
+end = time.time()
+print(end - start)
