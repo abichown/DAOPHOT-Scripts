@@ -17,6 +17,7 @@ start = time.time()
 
 
 # Open list of star names
+# Format of the file is: GALAXY STAR_NAME CHANNEL EPOCH
 stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
 
 # Iterate over every line in text file
@@ -27,22 +28,25 @@ for i in range(0, len(stars)):
 		    INITIAL SETUP
     '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-    # Grab name of target star and galaxy
+    # Get target star and galaxy
     galaxy = stars['Galaxy'][i]
     target_name = stars['Star'][i]
     
-    # Grab channel
+    # Get channel and convert to wavelength
     if stars['Channel'][i] == 1:
+    	channel = '1'
         wavelength = '3p6um'
     elif stars['Channel'][i] == 2:
+    	channel = '2'
         wavelength = '4p5um'
     else: wavelength = 'channel not defined'
     
-    # Grab epoch 
+    # Get current epoch to be working with 
     if stars['Epoch'][i] < 10:
         epoch_number = '0' + str(stars['Epoch'][i])
     else: epoch_number = str(stars['Epoch'][i])
         
+    # Iterate over each of the 10 dithers that make up one epoch
     for j in range(1,11):
         
 	    # Dither number
@@ -50,19 +54,16 @@ for i in range(0, len(stars)):
 	       
 	    # File to work on
 	    image = target_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither_number + '_cbcd_dn.fits'
-	    image_nf =  image.replace('.fits','')
+	    image_nf =  image.replace('.fits','') # name without fits ext
 
 	    #print 'Currently working on file:' + image
 
+	    # Where all my data is kept
 	    home = '/home/ac833/Data/'
 
-	    for root,dirs,files in os.walk(home+galaxy):
-		    for filename in files:
-			    if fnmatch.fnmatch(filename,image):
-				    path_to_image = os.path.join(home,root) + '/'
-
-	    # print 'Changed directory to where the image is: ' + path_to_image
-	    os.chdir(path_to_image)
+	    # Current working directory is the home of this image 
+	    cwd = home + galaxy + '/BCD/' + target_name + '/ch' + channel + '/e' + epoch_number + '/'
+	    os.chdir(cwd)
 
 		# Remove any previous runs of this script
 	    extensions = ['.coo', '.ap']
@@ -83,15 +84,11 @@ for i in range(0, len(stars)):
 	     		RUN DAOPHOT
 	    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-	    # print 'Opening DAOPHOT...'
-
 	    daophot = pexpect.spawn("daophot")
 
 		# Attach the image
 	    daophot.expect("Command:")
 	    daophot.sendline("at " + image_nf)
-
-	    # print 'Attached file: ' + image_nf
 
 		# Find the stars
 	    daophot.expect("Command:")
@@ -103,10 +100,7 @@ for i in range(0, len(stars)):
 	    daophot.expect("Are you happy with this?")
 	    daophot.sendline("y")
 
-	    # print "FIND complete"
-
-		# Aperture photometry
-
+		# Perfome aperture photometry
 	    daophot.expect("Command:")
 	    daophot.sendline("ph")
 	    daophot.expect("File with aperture radii")
@@ -118,16 +112,10 @@ for i in range(0, len(stars)):
 	    daophot.expect("Output file")
 	    daophot.sendline(image_nf + ".ap")
 
-	    # print "PHOT complete"
-
 		# Exit daophot
-
 	    daophot.expect("Command:")
 	    daophot.sendline("exit")
 	    daophot.close(force=True)
-
-
-print 'FIND and PHOT done for all dithers at these epochs for these stars'
 
 end = time.time()
 print(end - start)
