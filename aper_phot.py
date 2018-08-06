@@ -1,6 +1,6 @@
 '''
 Purpose: Reads in list of star names, channel and epoch. For a given star and epoch, FIND stars 
-and does aperture PHOT on them
+and does aperture PHOT on them. Then choose the candidate PSF stars
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -100,7 +100,7 @@ for i in range(0, len(stars)):
 	    daophot.expect("Are you happy with this?")
 	    daophot.sendline("y")
 
-		# Perfome aperture photometry
+		# Perform aperture photometry
 	    daophot.expect("Command:")
 	    daophot.sendline("ph")
 	    daophot.expect("File with aperture radii")
@@ -111,6 +111,16 @@ for i in range(0, len(stars)):
 	    daophot.sendline(image_nf + ".coo")
 	    daophot.expect("Output file")
 	    daophot.sendline(image_nf + ".ap")
+
+	    # Choose candidate PSF stars
+	    daophot.expect("Command:")
+	    daophot.sendline("pi")
+	    daophot.expect("Input file name")
+	    daophot.sendline(image_nf + '.ap')
+	    daophot.expect("Desired number of stars, faintest magnitude:")
+	    daophot.sendline("40,19")
+	    daophot.expect("Output file name")
+	    daophot.sendline(image_nf + '.lst')   
 
 		# Exit daophot
 	    daophot.expect("Command:")
