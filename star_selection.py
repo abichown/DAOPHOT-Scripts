@@ -16,6 +16,7 @@ import numpy as np
 import sys
 import os
 import shutil
+import astropy.io.fits as fits
 
 # find files 
 stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
@@ -122,7 +123,7 @@ for i in range(0, len(stars)):
 			if execute == 1:
 
 				# Check ratio between centre and ring1 is > 10%
-				if ave1 / centre < 0.1:
+				if ave_1 / centre < 0.1:
 					df.drop(index, inplace=True)
 					execute = 0
 
