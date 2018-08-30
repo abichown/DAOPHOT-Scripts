@@ -27,18 +27,19 @@ def median(row_of_df, start_dither):
 	daomatch.logfile = fout
 
 	# Give DAOMATCH all the 5 dithers to be used in making the medianed image
+	# The '/' after the file names lets DAOMATCH know that the scale is the same and it is only the rotation and shifts that might have changed
 	daomatch.expect("Master input file:")
 	daomatch.sendline(stem+'_d'+str(start_dither)+'_cbcd_dn.ap') # Give it the first BCD phot file
 	daomatch.expect("Output file name")
 	daomatch.sendline(stem+'_f'+field+'.mch')
 	daomatch.expect("Next input file:")
-	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.ap') # Give it the second BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.ap/') # Give it the second BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.ap') # Give it the third BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.ap/') # Give it the third BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.ap') # Give it the fourth BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.ap/') # Give it the fourth BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.ap') # Give it the fifth BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.ap/') # Give it the fifth BCD phot file
 	daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
 
@@ -46,8 +47,8 @@ def median(row_of_df, start_dither):
 	daomaster = pexpect.spawn('daomaster')
 
 	# Set up log file
-	fout = file(stem+'_daomaster_log.txt','w')
-	daomaster.logfile = fout
+	#fout = file(stem+'_daomaster_log.txt','w')
+	#daomaster.logfile = fout
 
 	daomaster.expect("File with list of input files:")
 	daomaster.sendline(stem+'_f'+field+'.mch')
@@ -58,8 +59,8 @@ def median(row_of_df, start_dither):
 	daomaster.expect("Your choice:")
 	daomaster.sendline("6") # solve for 6 degrees of freedom
 	daomaster.expect("Critical match-up radius:")
-	daomaster.sendline("7") # play around with this
-
+	daomaster.sendline("7") 
+	
 	for dither in range(start_dither+1,start_dither+5):
 		daomaster.expect(stem+'_d'+str(dither)+'_cbcd_dn.ap')
 		daomaster.sendline("")
@@ -285,25 +286,25 @@ def run_allframe(row_of_df, start_dither):
 	print "Running ALLFRAME on " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
 
 	# Run allstar on every aper phot file for each bcd image
-	for i in range(start_dither, start_dither+5):
+	# for i in range(start_dither, start_dither+5):
 
-		allstar = pexpect.spawn('allstar')
+	# 	allstar = pexpect.spawn('allstar')
 
-		allstar.expect("OPT>")
-		allstar.sendline("")
-		allstar.expect("Input image name:")
-		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.fits')
-		allstar.expect("File with the PSF")
-		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.psf')
-		allstar.expect("Input file")
-		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.ap')
-		allstar.expect("File for results")
-		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.als')
-		allstar.expect("Name for subtracted image")
-		allstar.sendline(stem + '_d' + str(i) + '_cbcd_dns')
+	# 	allstar.expect("OPT>")
+	# 	allstar.sendline("")
+	# 	allstar.expect("Input image name:")
+	# 	allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.fits')
+	# 	allstar.expect("File with the PSF")
+	# 	allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.psf')
+	# 	allstar.expect("Input file")
+	# 	allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.ap')
+	# 	allstar.expect("File for results")
+	# 	allstar.sendline(stem + '_d' + str(i) + '_cbcd_dn.als')
+	# 	allstar.expect("Name for subtracted image")
+	# 	allstar.sendline(stem + '_d' + str(i) + '_cbcd_dns')
 
-		allstar.expect("Good bye")
-		allstar.close(force=True)
+	# 	allstar.expect("Good bye")
+	# 	allstar.close(force=True)
 
 	# Change .ap file names in .mch_mast file to .als
 
@@ -338,6 +339,8 @@ def run_allframe(row_of_df, start_dither):
 
 # Match alf files from allframe for each of the BCDs
 def match_alf(row_of_df, start_dither):
+
+	print "Running DAOMATCH on " + target_name + "     ch: " + wavelength + "     epoch: " + epoch_number
 
 	# Change suffix of mch_mast file from als to alf
 	# Read in the file
@@ -430,7 +433,7 @@ df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy
 # Loop over each row in txt file
 # Also loop over the two dither combinations
 for i in range(0, len(df)):
-	for j in [1,6]:
+	for j in [6]: #[1,6]
 		
 		# INITIAL SETUP 
 
@@ -478,6 +481,7 @@ for i in range(0, len(df)):
 		if (os.path.isfile(stem+'_f'+field+'.fits')):
 			os.remove(stem+'_f'+field+'.fits')
 
+		print "Working on " + stem + "field " + field
 
 		# MAKE MEDIANED IMAGE - OUTPUT OF MEDIAN FUNCTION IS THE X AND Y OFFSETS THAT NEED 
 		# TO BE APPLIED IN FIND STARS

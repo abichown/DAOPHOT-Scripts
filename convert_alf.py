@@ -55,13 +55,13 @@ def dao(row_of_df, start_dither):
 	daomatch.expect("Output file name")
 	daomatch.sendline(stem+'_f'+str(field)+'_corrected.mch')
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.alf_all') # Give it the second BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.alf_all/') # Give it the second BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.alf_all') # Give it the third BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.alf_all/') # Give it the third BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.alf_all') # Give it the fourth BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.alf_all/') # Give it the fourth BCD phot file
 	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.alf_all') # Give it the fifth BCD phot file
+	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.alf_all/') # Give it the fifth BCD phot file
 	daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
 
