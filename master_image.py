@@ -1,6 +1,6 @@
 '''
 Purpose: Create a medianed image from all the 120 (24 x 5) or 60 (12 x 5) frames for a field for a channel.
-This image will then be used to obtain the master star list that gets put through ALLFRAME.
+Then obtain the master star list which gets put through ALLFRAME in the next script.
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -34,7 +34,7 @@ for i in range(0,len(df)):
 		num_epochs = 12
 	else: num_epochs = 0 # will error later on in script
 
-	num_images = num_epochs * 5 # for a 5 dither pattern
+	num_images = num_epochs * 5 # for a 5 dither pattern like we have for CHP data
 
 	print galaxy, star_name, wavelength, num_epochs
 
@@ -82,7 +82,11 @@ for i in range(0,len(df)):
 	# Make temp folder
 	os.mkdir(temp)
 
-	for start_dither in [1,6]:
+	for start_dither in [1,6]: 
+
+		if start_dither == 1:
+			field = '1'
+		else: field = '2'
 
 		# Copy all FITS images, psfs and phot files to temp folder
 		for epoch in range(1,num_epochs+1):
@@ -98,7 +102,7 @@ for i in range(0,len(df)):
 
 				dither = str(dither)
 
-				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap')
+				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
 				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
 				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.psf', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.psf')
 
@@ -114,7 +118,7 @@ for i in range(0,len(df)):
 		# Input epoch 1 first dither of field as master input file
 		daomatch.expect("Master input file:")
 
-		if start_dither == 1:
+		if field == '1':
 			daomatch.sendline(field1_files[0]) # this is epoch 1 dither 1 file
 			daomatch.expect("Output file name")
 			daomatch.sendline(star_name + '_' + wavelength + '_f1.mch')
@@ -124,22 +128,20 @@ for i in range(0,len(df)):
 			daomatch.sendline(star_name + '_' + wavelength + '_f2.mch')		
 
 
-		for j in range(1,120):
-			print j
+		for j in range(1,num_images):
 
-			try:
-				daomatch.expect("Next input file")
+			if field == '1':
+				print field1_files[j]
+			else:
+				print field2_files[j]
 
-				if start_dither == 1:
-					daomatch.sendline(field1_files[j]+'/')
-				else:
-					daomatch.sendline(field2_files[j]+'/')
-				pass
 
-			except: 
-				print "Bad"
-				daomatch.expect("Write this transformation?")
-				daomatch.sendline("No")
+			daomatch.expect("Next input file")
+
+			if field == '1':
+				daomatch.sendline(field1_files[j]+'/')
+			else:
+				daomatch.sendline(field2_files[j]+'/')
 
 
 		daomatch.expect("Next input file")
@@ -155,14 +157,9 @@ for i in range(0,len(df)):
 		print "Running DAOMASTER"
 
 		daomaster.expect("File with list of input files:")
-
-		if start_dither == 1:
-			daomaster.sendline(star_name + '_' + wavelength + '_f1.mch')
-		else: 
-			daomaster.sendline(star_name + '_' + wavelength + '_f2.mch')
-
+		daomaster.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')
 		daomaster.expect("Minimum number, minimum fraction, enough frames:")
-		daomaster.sendline("1, 0.5, 120") # play around with these values
+		daomaster.sendline("1, 0.5, " + str(num_images)) # play around with these values
 		daomaster.expect("Maximum sigma:")
 		daomaster.sendline("99") # play around with this value
 		daomaster.expect("Your choice:")
@@ -170,9 +167,9 @@ for i in range(0,len(df)):
 		daomaster.expect("Critical match-up radius:")
 		daomaster.sendline("7") 
 
-		for j in range(1,120):
+		for j in range(1,num_images):
 
-			if start_dither == 1:
+			if field == '1':
 				daomaster.expect(field1_files[j])
 				daomaster.sendline("")
 			else:
@@ -193,23 +190,11 @@ for i in range(0,len(df)):
 		daomaster.expect("A file with corrected magnitudes and errors?")
 		daomaster.sendline("n")
 		daomaster.expect("A file with raw magnitudes and errors?")
-		daomaster.sendline("y")
-		daomaster.expect("Output file name")
-
-		if start_dither == 1:
-			daomaster.sendline(star_name + '_' + wavelength + '_f1.raw')
-		else: 
-			daomaster.sendline(star_name + '_' + wavelength + '_f2.raw')		
-
+		daomaster.sendline("n")
 		daomaster.expect("A file with the new transformations?")
 		daomaster.sendline("y")
 		daomaster.expect("Output file name")
-
-		if start_dither == 1:
-			daomaster.sendline(star_name + '_' + wavelength + '_f1.mch')
-		else:
-			daomaster.sendline(star_name + '_' + wavelength + '_f2.mch')
-
+		daomaster.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')
 		daomaster.expect("New output file name")
 		daomaster.sendline("")
 		daomaster.expect("A file with the transfer table?")
@@ -225,12 +210,7 @@ for i in range(0,len(df)):
 		montage2.logfile = fout
 
 		montage2.expect("File with transformations:")
-
-		if start_dither == 1:
-			montage2.sendline(star_name + '_' + wavelength + '_f1.mch')
-		else:
-			montage2.sendline(star_name + '_' + wavelength + '_f2.mch')
-
+		montage2.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')
 		montage2.expect("Image-name suffix:")
 		montage2.sendline("")
 		montage2.expect("Minimum number of frames, percentile:")
@@ -244,16 +224,26 @@ for i in range(0,len(df)):
 		montage2.expect("Determine sky from overlap region?")
 		montage2.sendline("y")
 		montage2.expect("Name for output image")
-
-		if start_dither == 1:
-			montage2.sendline(star_name + '_' + wavelength + '_f1.fits')
-		else:
-			montage2.sendline(star_name + '_' + wavelength + '_f2.fits')
-
+		montage2.sendline(star_name + '_' + wavelength + '_f' + field + '.fits')
 		montage2.expect("Good bye")
 		montage2.close(force=True)
 
-		# Use DAOPHOT to find optimal threshold (elbow of curve) and then create star list
+		# Write down X and Y offsets
+		log = open('montage_log.txt', 'r')
+		lines = log.readlines()
+
+		offsets = []
+		
+		for line in lines:
+			if "Offsets" in line:
+
+				offsets.append(line.split(' ')[-3])
+				offsets.append(line.split(' ')[-2])
+
+
+		print offsets
+
+		# Use DAOPHOT to create star list
 		shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
 		shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
 		shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
@@ -268,19 +258,13 @@ for i in range(0,len(df)):
 
 		# Attach medianed image
 		daophot.expect("Command:")
-
-		if start_dither == 1:
-			daophot.sendline("at " + star_name + '_' + wavelength + '_f1.fits')
-		else:
-			daophot.sendline("at " + star_name + '_' + wavelength + '_f2.fits')
-
-		# Experiment with threshold to find the value near the 'elbow' of the curve
+		daophot.sendline("at " + star_name + '_' + wavelength + '_f' + field +'.fits')
 		daophot.expect("Command:")
 		daophot.sendline("opt")
 		daophot.expect("File with parameters")
 		daophot.sendline("")
 		daophot.expect("OPT>")
-		daophot.sendline("th=40") # set initial threshold to 2
+		daophot.sendline("th=20") 
 		daophot.expect("OPT>")
 		daophot.sendline("")
 
@@ -293,10 +277,75 @@ for i in range(0,len(df)):
 		daophot.expect("Are you happy with this?")
 		daophot.sendline("y")
 
+		daophot.expect("Command:")
+		daophot.sendline("ph")
+		daophot.expect("File with aperture radii")
+		daophot.sendline("")
+		daophot.expect("PHO>")
+		daophot.sendline("")
+		daophot.expect("Input position file")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.coo')
+		daophot.expect("Output file")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
+
 		daophot.expect("Command")
 		daophot.sendline("ex")
 
 		daophot.close(force=True)
+
+		# Open ALLSTAR
+		allstar = pexpect.spawn('allstar')
+
+		fout = file('allstar_log.txt', 'w')
+		allstar.logfile = fout
+
+		allstar.expect("OPT>")
+		allstar.sendline("")
+		allstar.expect("Input image name:")
+		allstar.sendline(star_name + '_' + wavelength + '_f'+ field + '.fits')
+		allstar.expect("File with the PSF")
+
+		if field == '1':
+			allstar.sendline(star_name + '_' + wavelength + '_e01_d1_cbcd_dn.psf')
+		else:
+			allstar.sendline(star_name + '_' + wavelength + '_e01_d6_cbcd_dn.psf')
+
+		allstar.expect("Input file")
+		allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
+		allstar.expect("File for results")
+		allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.als')
+		allstar.expect("Name for subtracted image")
+		allstar.sendline(star_name + '_' + wavelength + '_f' + field + '_dns.fits')
+
+		allstar.expect("Good bye")
+		allstar.close(force=True)
+
+		# Run DAOPHOT to add offsets back in
+		daophot = pexpect.spawn('daophot')
+
+		daophot.expect("Command:")
+		daophot.sendline("off") # offsets to put x and y back in
+		daophot.expect("Input file name:")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.als')
+		daophot.expect("Additive offsets ID, DX, DY, DMAG:")
+		daophot.sendline("0," + offsets[0] + "," + offsets[1] + ",0")
+		daophot.expect("Output file name")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.mag')
+
+		daophot.expect("Command:")
+		daophot.sendline("ex")
+		daophot.close(force=True)	
+
+		# Change .ap file names in .mch file to .als
+		f = open(star_name +'_' + wavelength + '_f'+field+'.mch', 'r')
+		filedata = f.read()
+		f.close()
+
+		newdata = filedata.replace(".ap",".als")
+
+		f = open(star_name +'_' + wavelength + '_f'+field+'.mch','w')
+		f.write(newdata)
+		f.close()	
 
 		# Now copy the master image and the master star list to each of the epochs 
 		for epoch in range(1,num_epochs+1):
@@ -306,13 +355,9 @@ for i in range(0,len(df)):
 				epoch = '0' + str(epoch)
 			else: epoch = str(epoch)
 
-			if start_dither == 1:
-				shutil.copy(star_name + '_' + wavelength + '_f1.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f1_master_image.fits')
-				shutil.copy(star_name + '_' + wavelength + '_f1.coo', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f1_master_star_list.coo')
-			else:
-				shutil.copy(star_name + '_' + wavelength + '_f2.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f2_master_image.fits')
-				shutil.copy(star_name + '_' + wavelength + '_f2.coo', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f2_master_star_list.coo')
-
+			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.fits')
+			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.mch', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mch')
+			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.mag', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mag')
 
 	# Delete temp folder
-	#shutil.rmtree(temp)
+	shutil.rmtree(temp)
