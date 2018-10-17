@@ -11,8 +11,9 @@ import sys
 import pandas as pd
 import numpy as np
 
+
 # Read star list
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Epoch'])
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/test_star.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Epoch'])
 
 # Create list of unique star entries in df
 stars = pd.unique(df['Star'])
@@ -59,15 +60,17 @@ for star in stars:
 
 			# Open file containing average magnitudes
 			ave_file = star + '_' + wavelength + '_e' + epoch + '_f' + field + '_corrected.ave'
-			ave = pd.read_csv(ave_file, header=0, delim_whitespace=True)
 
-			# Search for star near (133,122)
-			# I've played with these ranges to ensure HV00872 ch1 and ch2 data get included
-			# Might need to be changed
-			for i in range(0, len(ave)):
-				if (ave['X'][i] < 134.00 and ave['X'][i] > 128.00):
-					if (ave['Y'][i] < 124.00 and ave['Y'][i] > 121.00):
-						# write to file
-						f.writelines("%s %f %f %f \n" % (epoch, float(ave['m_ave'][i]), float(ave['e_ave'][i]), float(ave['std_dev'][i])))
+			if (os.path.isfile(ave_file)):
+				ave = pd.read_csv(ave_file, header=0, delim_whitespace=True)
+
+				# Search for star near (133,122)
+				# I've played with these ranges to ensure HV00872 ch1 and ch2 data get included
+				# Might need to be changed
+				for i in range(0, len(ave)):
+					if (ave['X'][i] < 134.00 and ave['X'][i] > 128.00):
+						if (ave['Y'][i] < 124.00 and ave['Y'][i] > 121.00):
+							# write to file
+							f.writelines("%s %f %f %f \n" % (epoch, float(ave['m_ave'][i]), float(ave['e_ave'][i]), float(ave['std_dev'][i])))
 
 		f.close()
