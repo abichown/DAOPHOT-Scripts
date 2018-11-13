@@ -10,7 +10,7 @@ import pandas as pd
 from astropy.io import fits
 
 # Read star info
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_info.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Period'])
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Period'])
 
 for i in range(0, len(df)):
 
@@ -52,7 +52,7 @@ for i in range(0, len(df)):
 	mags = pd.read_csv(mag_file, header=0, delim_whitespace=True)
 
 	magnitudes = list(mags['Mag'])
-	errors = list(mags['Error'])
+	errors = list(mags['Std_err'])
 
 	# Write out file in correct format
 	output_filename = '/home/ac833/GLOESS_mags/'+str(target_star)+'_'+wavelength+'_gloess.txt'

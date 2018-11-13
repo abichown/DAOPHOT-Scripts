@@ -193,14 +193,14 @@ def find_stars(row_of_df, start_dither):
 	num_det = num_det[::-1]
 	thresholds = range(2,20)
 
-	# plt.clf()
+	plt.clf()
 
-	# plt.scatter(thresholds, num_det)
-	# plt.show()
+	plt.scatter(thresholds, num_det)
+	plt.show()
 
 	# Package that finds the elbow/knee of a curve - this will be the optimal detection threshold
 	kn = KneeLocator(thresholds, num_det, direction='decreasing')
-	#print "Knee = " + str(kn.knee)
+	print "Knee = " + str(kn.knee)
 
 
 	# # Now find optimal threshold near elbow of curve

@@ -11,6 +11,7 @@ from astropy.io import fits
 from math import log10 
 import os
 import sys
+import pexpect
 
 # Location correction - apply to both individual alf files and ap files
 def loc_corr(row_of_df, start_dither):
@@ -58,7 +59,7 @@ def loc_corr(row_of_df, start_dither):
 	# Loop over all aperture files as these also need to be corrected
 	for ap in ap_files:	
 
-		# Load data - this is in df's because of the rubbish way .ap files are laid out
+		# Load data - this is in multiple df's because of the rubbish way .ap files are formatted
 		num_lines = sum(1 for line in open(ap)) # num lines in the ap file
 
 		first_rows = filter(lambda x: x%3 == 1, range(4, num_lines))
@@ -131,16 +132,16 @@ def zp_and_std_ape(row_of_df, start_dither):
 				df.loc[index, 'mag'] = df['mag'][index] - 25 + zmag
 
 		# Write to new file
-		filename = alf.replace('.alf_loc', '.alf_zp') # to show std aper and zp has been applied
+		filename = alf.replace('.alf_loc', '.alf_zp') # to show zp has been applied
 		df.to_csv(filename, sep=' ', index=False)
 
-	# Load ap files, apply zmag and write out to file
+	# Load ap files, apply zmag and standard calibration (because it is aperture mags) and write out to file
 	for ap in ap_files:
 
 		# Filename we want is .ap_loc
 		ap = ap.replace('.ap', '.ap_loc')
 
-		# Load data - this is in df's because of the rubbish way .ap files are laid out
+		# Load data - this is in multiple df's because of the rubbish way .ap files are formatted
 		ap_df = pd.read_csv(ap, header=0, delim_whitespace=True)
 
 		# Apply zmag to 'Mag' column
@@ -169,83 +170,185 @@ def zp_and_std_ape(row_of_df, start_dither):
 
 	return(0)
 
-# Aperture correction - uses ap and als mags for dither 1 to calculate correction value then applies to alf mags only
-# Should it be the individual alf file for dither 1 instead of als file
+# Aperture correction - uses ap and als mags to calculate correction value then applies to alf mags only
 def ap_corr(row_of_df, start_dither):
 
-	# Get names for dither 1 als and lst files - don't need ap file because lst has ap mags
-	als = stem + '_d1_cbcd_dn.als'
-	lst = stem + '_d1_cbcd_dn.lst'
-
-	# Open files into df's
-	df_lst = pd.read_csv(lst, skiprows=3, header=None, names=['ID_lst', 'X_lst', 'Y_lst', 'ap_mag', 'ap_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
-	df_als = pd.read_csv(als, skiprows=3, header=None, names=['ID_als', 'X_als', 'Y_als', 'psf_mag', 'psf_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
-
-	# Sort values by ID
-	df_lst.sort_values('ID_lst', axis=0, inplace=True)
-	df_als.sort_values('ID_als', axis=0, inplace=True)
-
-	# Then cross-check the lst and als dataframes to only keep stars that appear in both
-	for i in range(0, len(df_als)):
-		match = 0
-		for j in range(0, len(df_lst)):
-			# Check whether IDs match
-			if df_als['ID_als'][i] == df_lst['ID_lst'][j]:
-				match += 1
-
-		# If they match do nothing, else remove row
-		if match == 0:
-			df_als.drop(i, axis=0, inplace=True)
-
-	# Reset index to start at 0
-	df_als.reset_index(drop=True, inplace=True)
-	df_lst.reset_index(drop=True, inplace=True)
-
-	# Now get rid of any lst stars not in als
-	for i in range(0, len(df_lst)):
-		match = 0
-		for j in range(0, len(df_als)):
-			# Check whether IDs match
-			if df_lst['ID_lst'][i] == df_als['ID_als'][j]:
-				match += 1
-
-		# If they match, do nothing, else remove row
-		if match == 0:
-			df_lst.drop(i, axis=0, inplace=True)
-
-	# Reset index again
-	df_als.reset_index(drop=True, inplace=True)
-	df_lst.reset_index(drop=True, inplace=True)
-
-	# Now df_als and df_lst have same stars so can concat 
-	df = pd.concat((df_als, df_lst), axis=1)
-
-	# Remove columns not needed
-	df.drop(['X_lst', 'Y_lst', 'ID_lst'], axis=1, inplace=True) # keep als x and y as better
-
-	# Calculate difference in mag
-	df['Difference'] = df['ap_mag'] - df['psf_mag']
-
-	# Calculate average difference
-	corr_val = round(df['Difference'].mean(), 3)
-
-	# Apply this correction value to all individual alf files
+	# Applies to '.alf' magnitudes only
 	for alf in alf_files:
 
-		# Filename is the alf_zp files as we have now corrected for loc and std aper and zp
-		alf = alf.replace('.alf', '.alf_zp')
+		# Obtain file names for both the '.als' amd '.ap' files
+		als = alf.replace('.alf', '.als')
+		ap = alf.replace('.alf', '.ap')
 
-		# Open file into df
-		data = pd.read_csv(alf, delim_whitespace=True, header=0)
+		# Image name
+		image = alf.replace('.alf', '.fits')
 
-		# Add corr_val to mag
-		for index in range(0, len(data)):
-			if data['mag'][index] != 99.9999:
-				data.loc[index, 'mag'] = data['mag'][index] + corr_val
+		# Use DAOPHOT to pick bright stars in the image to calculate aperture correction
+		daophot = pexpect.spawn("daophot")
 
-		# Output to a new file suffix .alf_apc
-		alf = alf.replace('.alf_zp', '.alf_apc')
-		data.to_csv(alf, sep=' ', index=False)
+		fout = file('daophot_log.txt', 'w')
+		daophot.logfile = fout
+
+		daophot.expect("Command:")
+		daophot.sendline("at " + image)
+		daophot.expect("Command:")
+		daophot.sendline("pi")
+		daophot.expect("Input file name")
+		daophot.sendline(ap)
+		daophot.expect("Desired number of stars, faintest magnitude:")
+		daophot.sendline("15,99") # choose brightest 15 stars to calculate aperture correction from
+		daophot.expect("Output file name")
+		daophot.sendline("") # '.lst' file
+
+		# Open files into dataframes
+		# The lst dataframe contains the aperture magnitudes and ALL stars will be used from this file
+		# The als dataframe contains the psf magnitudes and only a SUBSET of these stars with IDs matching those of the lst df will be used
+
+		df_lst = pd.read_csv(lst, skiprows=3, header=None, names=['ID_lst', 'X_lst', 'Y_lst', 'ap_mag', 'ap_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
+		df_als = pd.read_csv(als, skiprows=3, header=None, names=['ID_als', 'X_als', 'Y_als', 'psf_mag', 'psf_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
+
+		# Sort rows by ID number
+		df_lst.sort_values('ID_lst', axis=0, inplace=True)
+		df_als.sort_values('ID_als', axis=0, inplace=True)
+
+		# Cross-check the two dataframes to only keep stars that appear in both dataframes
+		for i in range(0, len(df_als)):
+
+			match = 0 
+
+			for j in range(0, len(df_lst)):
+
+				# Check whether IDs match
+				if df_als['ID_als'][i] == df_lst['ID_lst'][j]:
+					match += 1
+
+				# If they match, do nothing as want to keep this row. Otherwise, delete the row in the als dataframe
+				if match == 0:
+					df_als.drop(i, axis=0, inplace=True)
+
+		# Reset index to start at 0
+		df_lst.reset_index(drop=True, inplace=True)
+		df_als.reset_index(drop=True, inplace=True)
+
+		# Now do the same process but removing any stars in the lst file not in the als file as the stars need to have magnitudes in both dataframes
+		for i in range(0, len(df_lst)):
+
+			match = 0
+
+			for j in range(0, len(df_als)):
+
+				# Check whether IDs match
+				if df_lst['ID_lst'][i] == df_als['ID_als'][j]:
+					match += 1
+
+				# If they match, do nothing as want to keep this row. Otherwise, delete the row in the als dataframe
+				if match == 0:
+					df_lst.drop(i, axis=0, inplace=True)
+
+		# Again, reset index to start at 0
+		df_lst.reset_index(drop=True, inplace=True)
+		df_als.reset_index(drop=True, inplace=True)	
+
+		# Now df_als and df_lst have the same stars so can concatenate
+		df_combined = pd.concat((df_als, df_lst), axis=1)
+
+		# Remove columns not needed
+		df_combined.drop(['X_lst', 'Y_lst', 'ID_lst'], axis=1, inplace=True)
+
+		# Now create new column in df_combined to calculate the difference between aperture and psf magnitudes
+		df_combined['mag_difference'] = df_combined['ap_mag'] - df_combined['psf_mag']	
+
+		# Calculate aperture correction value 
+		apc = round(df_combined['mag_difference'].mean(), 3)
+
+		# Open ALLFRAME magnitude file (.alf) and apply this apc value to these magnitudes
+		# This converts the PSF magnitudes from ALLFRAME onto the (3,12,20) aperture magnitude system
+		# The standard aperture calibration step is then required to convert these (3,12,20) magnitudes onto the standard IRAC Vega (10,12,20) system
+
+		df_alf = pd.read_csv()
+
+		df_alf['Mag'] += apc # ADD apc value to magnitudes
+
+		# Write out new corrected magnitudes to file
+
+
+
+
+
+
+	# # Get names for dither 1 als and lst files - don't need ap file because lst has ap mags
+	# als = stem + '_d1_cbcd_dn.als'
+	# lst = stem + '_d1_cbcd_dn.lst'
+
+	# # Open files into df's
+	# df_lst = pd.read_csv(lst, skiprows=3, header=None, names=['ID_lst', 'X_lst', 'Y_lst', 'ap_mag', 'ap_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
+	# df_als = pd.read_csv(als, skiprows=3, header=None, names=['ID_als', 'X_als', 'Y_als', 'psf_mag', 'psf_error'], usecols=(0,1,2,3,4), delim_whitespace=True)
+
+	# # Sort values by ID
+	# df_lst.sort_values('ID_lst', axis=0, inplace=True)
+	# df_als.sort_values('ID_als', axis=0, inplace=True)
+
+	# # Then cross-check the lst and als dataframes to only keep stars that appear in both
+	# for i in range(0, len(df_als)):
+	# 	match = 0
+	# 	for j in range(0, len(df_lst)):
+	# 		# Check whether IDs match
+	# 		if df_als['ID_als'][i] == df_lst['ID_lst'][j]:
+	# 			match += 1
+
+	# 	# If they match do nothing, else remove row
+	# 	if match == 0:
+	# 		df_als.drop(i, axis=0, inplace=True)
+
+	# # Reset index to start at 0
+	# df_als.reset_index(drop=True, inplace=True)
+	# df_lst.reset_index(drop=True, inplace=True)
+
+	# # Now get rid of any lst stars not in als
+	# for i in range(0, len(df_lst)):
+	# 	match = 0
+	# 	for j in range(0, len(df_als)):
+	# 		# Check whether IDs match
+	# 		if df_lst['ID_lst'][i] == df_als['ID_als'][j]:
+	# 			match += 1
+
+	# 	# If they match, do nothing, else remove row
+	# 	if match == 0:
+	# 		df_lst.drop(i, axis=0, inplace=True)
+
+	# # Reset index again
+	# df_als.reset_index(drop=True, inplace=True)
+	# df_lst.reset_index(drop=True, inplace=True)
+
+	# # Now df_als and df_lst have same stars so can concat 
+	# df = pd.concat((df_als, df_lst), axis=1)
+
+	# # Remove columns not needed
+	# df.drop(['X_lst', 'Y_lst', 'ID_lst'], axis=1, inplace=True) # keep als x and y as better
+
+	# # Calculate difference in mag
+	# df['Difference'] = df['ap_mag'] - df['psf_mag']
+
+	# # Calculate average difference
+	# corr_val = round(df['Difference'].mean(), 3)
+
+	# # Apply this correction value to all individual alf files
+	# for alf in alf_files:
+
+	# 	# Filename is the alf_zp files as we have now corrected for loc and std aper and zp
+	# 	alf = alf.replace('.alf', '.alf_zp')
+
+	# 	# Open file into df
+	# 	data = pd.read_csv(alf, delim_whitespace=True, header=0)
+
+	# 	# Add corr_val to mag
+	# 	for index in range(0, len(data)):
+	# 		if data['mag'][index] != 99.9999:
+	# 			data.loc[index, 'mag'] = data['mag'][index] + corr_val
+
+	# 	# Output to a new file suffix .alf_apc
+	# 	alf = alf.replace('.alf_zp', '.alf_apc')
+	# 	data.to_csv(alf, sep=' ', index=False)
 
 	return(0)
 

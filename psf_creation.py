@@ -42,11 +42,13 @@ for i in range(0, len(stars)):
     # Find absolute path of image	
 	home = '/home/ac833/Data/'
     
-	for root,dirs,files in os.walk(home+galaxy):
-		for filename in files:
-			if fnmatch.fnmatch(filename,image):
-				path_to_image = os.path.join(home,root) + '/'
+	# for root,dirs,files in os.walk(home+galaxy):
+	# 	for filename in files:
+	# 		if fnmatch.fnmatch(filename,image):
+	# 			path_to_image = os.path.join(home,root) + '/'
 
+
+	path_to_image = home + str(galaxy) + '/BCD/' + str(target_name) + '/ch' + str(stars['Channel'][i])  + '/e' + str(epoch_number) +'/'
 
 	# Change directory to where image is
 	os.chdir(path_to_image)
@@ -98,8 +100,9 @@ for i in range(0, len(stars)):
 	# Copy PSF model to other 9 dithers
 	for j in range(2,11):
 		new_name = image_nf.replace('d1','d'+str(j)) + '.psf'
-		if (os.path.isfile(new_name)):
-			os.remove(new_name)
+		# print new_name
+		# if (os.path.isfile(new_name)):
+		# 	os.remove(new_name)
 		shutil.copy(image_nf+'.psf', new_name)
 
 	print "PSF model made for " + image_nf + " and copied to all other dithers"

@@ -118,7 +118,7 @@ for i in range(0, len(stars)):
 	    daophot.expect("Input file name")
 	    daophot.sendline(image_nf + '.ap')
 	    daophot.expect("Desired number of stars, faintest magnitude:")
-	    daophot.sendline("20,99") # used to be 40, 19
+	    daophot.sendline("15,99") # used for the aperture correction later
 	    daophot.expect("Output file name")
 	    daophot.sendline(image_nf + '.lst')   
 

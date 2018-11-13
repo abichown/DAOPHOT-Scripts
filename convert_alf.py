@@ -1,6 +1,6 @@
 '''
-Purpose: Take the .alf_apc magnitudes and put them into a file suitable for DAOMATCH/DAOMASTER.
-Then run them through daomatch and daomaster to get file needed for averaging magnitudes
+Purpose: Take the calibrated magnitudes (.alf_cal) from calibration_steps.py and put them into a file suitable for DAOMASTER.
+Then run them through DAOMASTER to get file needed for averaging magnitudes in next step
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import sys
 import pexpect
+import shutil
 
 def format_alf(row_of_df, start_dither):
 
@@ -16,7 +17,7 @@ def format_alf(row_of_df, start_dither):
 
 		# Get filenames
 		alf = stem + '_d' + str(i) + '_cbcd_dn.alf' # has everything but the correct magnitudes
-		alf_apc = stem + '_d' + str(i) + '_cbcd_dn.alf_apc' # has the magnitudes we want
+		alf_apc = stem + '_d' + str(i) + '_cbcd_dn.alf_cal' # has the magnitudes we want
 
 		f = open(alf)
 
@@ -44,40 +45,55 @@ def format_alf(row_of_df, start_dither):
 	return(0)
 
 
-def dao(row_of_df, start_dither):
+def daomaster(row_of_df, start_dither):
 
-	# Spawn DAOMATCH
-	daomatch = pexpect.spawn('daomatch')
+	# File with the coordinate transformations in
+	match_file = target_name + '_' + wavelength + '_f' + str(field) + '_master.mch'
 
-	# Give DAOMATCH all the 5 dithers to be used in making the medianed image
-	daomatch.expect("Master input file:")
-	daomatch.sendline(stem+'_d'+str(start_dither)+'_cbcd_dn.alf_all') # Give it the first BCD phot file
-	daomatch.expect("Output file name")
-	daomatch.sendline(stem+'_f'+str(field)+'_corrected.mch')
-	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 1)+'_cbcd_dn.alf_all/') # Give it the second BCD phot file
-	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 2)+'_cbcd_dn.alf_all/') # Give it the third BCD phot file
-	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 3)+'_cbcd_dn.alf_all/') # Give it the fourth BCD phot file
-	daomatch.expect("Next input file")
-	daomatch.sendline(stem+'_d'+str(start_dither + 4)+'_cbcd_dn.alf_all/') # Give it the fifth BCD phot file
-	daomatch.expect("Next input file")
-	daomatch.sendline("") # exit
+	# Change the file extensions in the .mch file from .alf to .alf_all
+	f = open(match_file, 'r')
+	filedata = f.read()
+	f.close()
 
-	# Run DAOMASTER - refine the coordinate transformations from DAOMATCH
+	newdata = filedata.replace(".alf",".alf_all")
+
+	f = open(match_file,'w')
+	f.write(newdata)
+	f.close()
+
+	# Copy epoch 1 dither 1/6 .alf_all file
+	if epoch_number != '01':
+		shutil.copy(home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e01/' + target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all', target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all')
+
+	# Run DAOMASTER - use coordinate transformations from previous steps
 	daomaster = pexpect.spawn('daomaster')
 
 	daomaster.expect("File with list of input files:")
-	daomaster.sendline(stem+'_f'+str(field)+'_corrected.mch')
+	daomaster.sendline(match_file)
 	daomaster.expect("Minimum number, minimum fraction, enough frames:")
-	daomaster.sendline("2, 0.5, 5") # play around with these values
+	daomaster.sendline("1, 0.5, 5") # play around with these values
 	daomaster.expect("Maximum sigma:")
 	daomaster.sendline("0.5") # play around with this value
 	daomaster.expect("Your choice:")
 	daomaster.sendline("6") # solve for 6 degrees of freedom
 	daomaster.expect("Critical match-up radius:")
 	daomaster.sendline("7") # play around with this
+
+	if epoch_number == '01':
+
+		for dither in range(start_dither+1,start_dither+5):
+			#daomaster.expect(star_name + '_' + wavelength + '_e' + epoch + '_d' + str(dither) + '_cbcd_dn.alf')
+			daomaster.sendline("")
+
+	else:
+
+		#daomaster.expect(star_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf')
+		#daomaster.sendline("")
+
+		for dither in range(start_dither,start_dither+5):
+			#daomaster.expect('.alf')
+			#daomaster.expect(star_name + '_' + wavelength + '_e' + epoch + '_d' + str(dither) + '_cbcd_dn.alf')
+			daomaster.sendline("")
 
 	for dither in range(start_dither+1,start_dither+5):
 		daomaster.expect(stem+'_d'+str(dither)+'_cbcd_dn.alf_all')
@@ -98,9 +114,28 @@ def dao(row_of_df, start_dither):
 	daomaster.expect("A file with raw magnitudes and errors?")
 	daomaster.sendline("y")
 	daomaster.expect("Output file name")
-	daomaster.sendline(stem + '_f' + str(field) + '_corrected.raw')
+	daomaster.sendline(target_name + '_' + wavelength + '_f' + str(field) + '.cal')
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("e") # exits rest of options
+
+	# If not epoch 1, then want to remove the 2 extra columns in the '.cal file'
+	if epoch_number != '01':
+
+		cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'E01_mag', 'E01_err', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'])
+		cal_data.dropna(axis=0, subset=['M3'], inplace=True)
+		cal_data.reset_index(drop=True, inplace=True)
+		
+		# Now drop 'EO1' columns
+		cal_data.drop(['E01_mag', 'E01_err'], axis=1, inplace=True)
+
+		# Write out to new file
+		cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
+
+	else:
+
+		# Now just want to get rid of header so e01 and not e01 have same format of file
+		cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'], usecols=[0,1,2,3,4,5,6,7,8,9,10,11,12])
+		cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
 
 	return(0)
 
@@ -113,7 +148,7 @@ def dao(row_of_df, start_dither):
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Epoch'])
 
 for i in range(0, len(df)):
-	for j in [1,6]: 
+	for j in [6]: # [1,6] when both fields work 
 
 		# Initial setup
 		galaxy = df['Galaxy'][i]
@@ -156,4 +191,4 @@ for i in range(0, len(df)):
 		format_alf(i,j)
 
 		# Do DAOMATCH and DAOMASTER
-		dao(i,j)
+		daomaster(i,j)

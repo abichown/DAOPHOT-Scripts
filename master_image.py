@@ -12,7 +12,7 @@ import shutil
 
 
 # Get list of fields to make images for i.e. count unique fields in test_star.txt
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/test_star.txt', header=None, delim_whitespace=True, usecols=[0,1,2], names=['Galaxy', 'Star', 'Channel'])
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, usecols=[0,1,2], names=['Galaxy', 'Star', 'Channel'])
 df.drop_duplicates(inplace=True)
 df.reset_index(drop=True, inplace=True)
 
@@ -20,9 +20,9 @@ print df
 
 for i in range(0,len(df)):
 
-	galaxy = str(df['Galaxy'][i]) # generalise the 0
-	star_name = str(df['Star'][i]) # generalise the 0
-	channel = str(df['Channel'][i]) # generalise the 0
+	galaxy = str(df['Galaxy'][i]) 
+	star_name = str(df['Star'][i]) 
+	channel = str(df['Channel'][i]) 
 
 	if channel == '1':
 		wavelength = '3p6um'
@@ -82,7 +82,7 @@ for i in range(0,len(df)):
 	# Make temp folder
 	os.mkdir(temp)
 
-	for start_dither in [1,6]: 
+	for start_dither in [6]: # [1,6] just checking field 2 works right now 
 
 		if start_dither == 1:
 			field = '1'
@@ -104,7 +104,7 @@ for i in range(0,len(df)):
 
 				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
 				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
-				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.psf', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.psf')
+				#shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.psf', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.psf')
 
 		# Change to temp folder 
 		os.chdir(temp)
@@ -288,7 +288,27 @@ for i in range(0,len(df)):
 		daophot.expect("Output file")
 		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
 
-		daophot.expect("Command")
+		# Now choose brightest 20 stars in image to be candidate PSF stars
+		daophot.expect("Command:")
+		daophot.sendline("pi")
+		daophot.expect("Input file name")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
+		daophot.expect("Desired number of stars, faintest magnitude:")
+		daophot.sendline("20,99")
+		daophot.expect("Output file name")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.lst') 
+
+		# Now create initial estimate of a PSF model to be used in allstar in next step of this script
+		daophot.expect("Command:")
+		daophot.sendline("psf")
+		daophot.expect("File with aperture results")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
+		daophot.expect("File with PSF stars")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.lst')
+		daophot.expect("File for the PSF")
+		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.psf')
+
+		daophot.expect("Command:")
 		daophot.sendline("ex")
 
 		daophot.close(force=True)
@@ -304,11 +324,7 @@ for i in range(0,len(df)):
 		allstar.expect("Input image name:")
 		allstar.sendline(star_name + '_' + wavelength + '_f'+ field + '.fits')
 		allstar.expect("File with the PSF")
-
-		if field == '1':
-			allstar.sendline(star_name + '_' + wavelength + '_e01_d1_cbcd_dn.psf')
-		else:
-			allstar.sendline(star_name + '_' + wavelength + '_e01_d6_cbcd_dn.psf')
+		allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.psf')
 
 		allstar.expect("Input file")
 		allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
@@ -347,6 +363,14 @@ for i in range(0,len(df)):
 		f.write(newdata)
 		f.close()	
 
+		# NOW MAKE PSF MODEL FROM STARS IN MASTER IMAGE
+
+		# Run DAOPHOT to initially pick some stars
+
+		# Perform any quality tests to remove bad stars
+
+		# Create final PSF model 
+
 		# Now copy the master image and the master star list to each of the epochs 
 		for epoch in range(1,num_epochs+1):
 
@@ -358,6 +382,7 @@ for i in range(0,len(df)):
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.fits')
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.mch', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mch')
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.mag', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mag')
+			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.psf')
 
 	# Delete temp folder
-	shutil.rmtree(temp)
+	#shutil.rmtree(temp)
