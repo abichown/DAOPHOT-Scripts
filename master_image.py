@@ -11,12 +11,12 @@ import pexpect
 import shutil
 
 
-# Get list of fields to make images for i.e. count unique fields in test_star.txt
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, usecols=[0,1,2], names=['Galaxy', 'Star', 'Channel'])
-df.drop_duplicates(inplace=True)
-df.reset_index(drop=True, inplace=True)
+# Get list of fields to make master images for 
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, usecols=[0,1,2,3], names=['Galaxy', 'Star', 'Period', 'Channel'])
 
-print df
+# No longer need these as won't have duplicates
+#df.drop_duplicates(inplace=True)
+#df.reset_index(drop=True, inplace=True)
 
 for i in range(0,len(df)):
 
@@ -77,7 +77,8 @@ for i in range(0,len(df)):
 	temp = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/temp/'
 
 	# Delete temp folder if it already exists - NEED TO ADD IF IT EXISTS TO DELETE
-	#shutil.rmtree(temp)
+	if (os.path.isdir(temp)):
+		shutil.rmtree(temp)
 
 	# Make temp folder
 	os.mkdir(temp)
@@ -129,12 +130,6 @@ for i in range(0,len(df)):
 
 
 		for j in range(1,num_images):
-
-			if field == '1':
-				print field1_files[j]
-			else:
-				print field2_files[j]
-
 
 			daomatch.expect("Next input file")
 
@@ -240,8 +235,6 @@ for i in range(0,len(df)):
 				offsets.append(line.split(' ')[-3])
 				offsets.append(line.split(' ')[-2])
 
-
-		print offsets
 
 		# Use DAOPHOT to create star list
 		shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
@@ -385,4 +378,4 @@ for i in range(0,len(df)):
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.psf')
 
 	# Delete temp folder
-	#shutil.rmtree(temp)
+	shutil.rmtree(temp)

@@ -13,7 +13,7 @@ import shutil
 import sys
 
 # Load stars and epochs to perform photometry on
-stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Channel','Epoch'])
+stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period','Channel'])
 
 
 # Iterate over every line in text file
@@ -31,51 +31,60 @@ for i in range(0, len(stars)):
     	channel = '2'
         wavelength = '4p5um'
     else: wavelength = 'channel not defined'
+
+	# Get number of epochs
+    if galaxy == 'LMC':
+			num_epochs = 24
+    elif galaxy == 'SMC':
+			num_epochs = 12
+    else: num_epochs = 0    
     
-    # Get current epoch to be working with 
-    if stars['Epoch'][i] < 10:
-        epoch_number = '0' + str(stars['Epoch'][i])
-    else: epoch_number = str(stars['Epoch'][i])
+   	# Run over each epoch
+    for epoch in range(1, num_epochs+1):
 
-    # Where all my data is kept
-    home = '/home/ac833/Data/'
+		if epoch < 10:
+			epoch_number = '0' + str(epoch)
+		else: epoch_number = str(epoch)
 
-    # Current working directory is the home of this image 
-    cwd = home + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number + '/'
-    os.chdir(cwd)
+		# Where all my data is kept
+		home = '/home/ac833/Data/'
 
-    # Copy allstar.opt file to cwd 
-    shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
+		# Current working directory is the home of this image 
+		cwd = home + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number + '/'
+		os.chdir(cwd)
 
-	# For each field (currently only doing for field 2)
-    for field in [2]: #[1,2]
+		# Copy allstar.opt file to cwd 
+		shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
 
-		if field == 1:
-			start_dither = 1
-		else: start_dither = 6
+		# For each field (currently only doing for field 2)
+		for field in [2]: #[1,2]
 
-		for dither in range(start_dither, start_dither+5):
+			if field == 1:
+				start_dither = 1
+			else: start_dither = 6
 
-			# Spawn ALLSTAR and perform PSF photometry using PSF model made from master image
-			allstar = pexpect.spawn('allstar')
+			for dither in range(start_dither, start_dither+5):
 
-			fout = file('allstar_log.txt', 'w')
-			allstar.logfile = fout
+				# Spawn ALLSTAR and perform PSF photometry using PSF model made from master image
+				allstar = pexpect.spawn('allstar')
 
-			allstar.expect("OPT>")
-			allstar.sendline("")
-			allstar.expect("Input image name:")
-			allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.fits')
-			allstar.expect("File with the PSF")
-			allstar.sendline(star_name + '_' + wavelength + '_f' + str(field) + '_master.psf')
+				fout = file('allstar_log.txt', 'w')
+				allstar.logfile = fout
 
-			allstar.expect("Input file")
-			allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.ap')
-			allstar.expect("File for results")
-			allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.als')
-			allstar.expect("Name for subtracted image")
-			allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dns.fits')
+				allstar.expect("OPT>")
+				allstar.sendline("")
+				allstar.expect("Input image name:")
+				allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.fits')
+				allstar.expect("File with the PSF")
+				allstar.sendline(star_name + '_' + wavelength + '_f' + str(field) + '_master.psf')
 
-			allstar.expect("Good bye")
-			allstar.close(force=True)			
+				allstar.expect("Input file")
+				allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.ap')
+				allstar.expect("File for results")
+				allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.als')
+				allstar.expect("Name for subtracted image")
+				allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dns.fits')
+
+				allstar.expect("Good bye")
+				allstar.close(force=True)			
 

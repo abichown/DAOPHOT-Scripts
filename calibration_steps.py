@@ -284,7 +284,7 @@ def zp_and_std_ape(row_of_df, start_dither):
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 # Read in list of stars that need correcting
-df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Epoch'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'Channel'])
 
 for i in range(0, len(df)):
 	for j in [6]: #[1,6] when got both fields working 
@@ -301,43 +301,53 @@ for i in range(0, len(df)):
 			wavelength = '4p5um'
 		else: channel = 'Invalid channel'
 
-		if df['Epoch'][i] < 10:
-			epoch_number = '0' + str(df['Epoch'][i])
-		else: epoch_number = str(df['Epoch'][i])
-
 		if j == 1:
 			field = 1
 		elif j == 6:
 			field = 2
 		else: field = "Invalid field"
 
-		# Find absolute path of where images are
-		home = '/home/ac833/Data/'
-		cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
+	   	# Get number of epochs
+		if galaxy == 'LMC':
+	   		num_epochs = 24
+		elif galaxy == 'SMC':
+	   		num_epochs = 12
+		else: num_epochs = 0
 
-		stem = target_name + '_' + wavelength + '_e' + epoch_number
+	   	# Run over each epoch
+		for epoch in range(1, num_epochs+1):
 
-		# Change working directory to where the data is
-		os.chdir(cwd)
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-		print "Working on: " + str(target_name) + "    Epoch: " + str(epoch_number) + "     Field: " + str(field)
+			# Find absolute path of where images are
+			home = '/home/ac833/Data/'
+			cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
 
-		# Set up lists of ap, alf and als files to loop over later
-		ap_files = []
-		alf_files = []
-		als_files = []
+			stem = target_name + '_' + wavelength + '_e' + epoch_number
 
-		for dither in range(j, j+5):
-			ap_files.append(stem + '_d' + str(dither) + '_cbcd_dn.ap')
-			alf_files.append(stem + '_d' + str(dither) + '_cbcd_dn.alf')
-			als_files.append(stem + '_d' + str(dither) + '_cbcd_dn.als') 
+			# Change working directory to where the data is
+			os.chdir(cwd)
 
-		# Location correction
-		loc_corr(i,j)
+			print "Working on: " + str(target_name) + "    Epoch: " + str(epoch_number) + "     Field: " + str(field)
 
-		# Aperture correction
-		ap_corr(i,j)
+			# Set up lists of ap, alf and als files to loop over later
+			ap_files = []
+			alf_files = []
+			als_files = []
 
-		# Standard aperture calibration and zero magnitude point correction
-		zp_and_std_ape(i,j)
+			for dither in range(j, j+5):
+				ap_files.append(stem + '_d' + str(dither) + '_cbcd_dn.ap')
+				alf_files.append(stem + '_d' + str(dither) + '_cbcd_dn.alf')
+				als_files.append(stem + '_d' + str(dither) + '_cbcd_dn.als') 
+
+			# Location correction
+			loc_corr(i,j)
+
+			# Aperture correction
+			ap_corr(i,j)
+
+			# Standard aperture calibration and zero magnitude point correction
+			zp_and_std_ape(i,j)
 

@@ -18,7 +18,7 @@ rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['Garamond']
 
 
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, names=['Galaxy', 'Star', 'Channel', 'Period'], delim_whitespace=True)
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, names=['Galaxy', 'Star', 'Period', 'Channel'], delim_whitespace=True)
 
 for i in range(0, len(df)):
 
@@ -37,7 +37,7 @@ for i in range(0, len(df)):
 		wavelength = '4p5um'
 	else: wavelength = 'not_defined'
 
-	input_filename = '/home/ac833/GLOESS_mags/' + target_star + '_' + wavelength + '_gloess.txt'	
+	input_filename = '/home/ac833/GLOESS_files/' + target_star + '_' + wavelength + '_gloess.txt'	
 
 	print input_filename	
 
@@ -61,11 +61,13 @@ for i in range(0, len(df)):
 		if counter == 1:
 			# if counter = 1 then the first word in this line of the input file is the period of the cepheid
 			period = float(data[0])
-			if period > 0:
-				# positive number means the period has been phased
+			if period > 12:
+				# for Cepheids with periods > 12 days then the observations were taken equally spaced
+				# therefore, error scales with 1/N
 				phased = 1
 			else:
-				# otherwise its not been phased
+				# for Cepheids with periods < 12 days they weren't equally spaced
+				# therefore, error scales with 1/sqrt(N)
 				phased = 0
 		if counter == 2:
 			# if counter = 2, the first word in this line of the input file is the number of lines
@@ -104,7 +106,6 @@ for i in range(0, len(df)):
 	# Phases don't need to be done individually by band - only depends on P - check my method of phasing still gives the same results 
 	# This might just be a more general case
 	phase = (mjd / period) - np.floor(mjd / period)
-	#phase = (mjd - mjd[0])/period
 	multiple_phase = np.concatenate((phase,(phase+1.0),(phase+2.0),(phase+3.0),(phase+4.0)))
 
 
@@ -201,7 +202,13 @@ for i in range(0, len(df)):
 
 	f = open(master_mags_file, 'a')
 
-	f.write(str(galaxy) + ' ' + str(target_star) + ' ' + str(channel) + ' ' + str(period) + ' ' + str(round(aveir1,2)) + ' ' + str(round(sdevir1/factor,2)) + ' ' + str(round(ampir1,2)) ) 
+	if phased == 1:
+		std_error = sdevir1/(factor ** 2) # error scales with 1/N
+	else:
+		std_error = sdevir1/factor # error scales with 1/sqrt(N)
+
+
+	f.write(str(galaxy) + ' ' + str(target_star) + ' ' + str(channel) + ' ' + str(period) + ' ' + str(round(aveir1,2)) + ' ' + str(round(std_error, 4)) + ' ' + str(round(ampir1,4)) + '\n' ) 
 
 	f.close()
 

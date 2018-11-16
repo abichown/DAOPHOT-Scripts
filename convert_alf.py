@@ -145,7 +145,7 @@ def daomaster(row_of_df, start_dither):
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 # Read in list of stars that need converting
-df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Channel', 'Epoch'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'Channel'])
 
 for i in range(0, len(df)):
 	for j in [6]: # [1,6] when both fields work 
@@ -162,33 +162,43 @@ for i in range(0, len(df)):
 			wavelength = '4p5um'
 		else: channel = 'Invalid channel'
 
-		if df['Epoch'][i] < 10:
-			epoch_number = '0' + str(df['Epoch'][i])
-		else: epoch_number = str(df['Epoch'][i])
-
 		if j == 1:
 			field = 1
 		elif j == 6:
 			field = 2
 		else: field = "Invalid field"
 
-		# Find absolute path of where images are
-		home = '/home/ac833/Data/'
-		cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
+		# Get number of epochs
+		if galaxy == 'LMC':
+				num_epochs = 24
+		elif galaxy == 'SMC':
+				num_epochs = 12
+		else: num_epochs = 0
 
-		stem = target_name + '_' + wavelength + '_e' + epoch_number
+			# Run over each epoch
+		for epoch in range(1, num_epochs+1):
 
-		# Change working directory to where the data is
-		os.chdir(cwd)
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-		print "Working on: " + str(target_name) + "    Epoch: " + str(epoch_number) + "     Field: " + str(field)
+			# Find absolute path of where images are
+			home = '/home/ac833/Data/'
+			cwd = home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e' + str(epoch_number) + '/'
 
-		# Delete any previous runs
-		if (os.path.isfile(stem+'_f'+str(field)+'_corrected.raw')):
-			os.remove(stem+'_f'+str(field)+'_corrected.raw')		
+			stem = target_name + '_' + wavelength + '_e' + epoch_number
 
-		# Convert alf_apc file to standard format for DAOMATCH
-		format_alf(i,j)
+			# Change working directory to where the data is
+			os.chdir(cwd)
 
-		# Do DAOMATCH and DAOMASTER
-		daomaster(i,j)
+			print "Working on: " + str(target_name) + "    Epoch: " + str(epoch_number) + "     Field: " + str(field)
+
+			# Delete any previous runs
+			if (os.path.isfile(stem+'_f'+str(field)+'_corrected.raw')):
+				os.remove(stem+'_f'+str(field)+'_corrected.raw')		
+
+			# Convert alf_apc file to standard format for DAOMATCH
+			format_alf(i,j)
+
+			# Do DAOMATCH and DAOMASTER
+			daomaster(i,j)

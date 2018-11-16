@@ -12,9 +12,11 @@ import shutil
 
 
 # Get list of fields to make images for i.e. count unique fields in test_star.txt
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, usecols=[0,1,2], names=['Galaxy', 'Star', 'Channel'])
-df.drop_duplicates(inplace=True)
-df.reset_index(drop=True, inplace=True)
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, usecols=[0,1,2,3], names=['Galaxy', 'Star', 'Period', 'Channel'])
+
+# Don't need this now since won't have any duplicate lines
+#df.drop_duplicates(inplace=True)
+#df.reset_index(drop=True, inplace=True)
 
 for i in range(0,len(df)):
 
@@ -120,30 +122,7 @@ for i in range(0,len(df)):
 
 			if epoch != '01':
 				shutil.copy('/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e01/' + star_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf', star_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf')
-
-
-			# Now run DAOMATCH with .alf files
-
-  	# 		daomatch = pexpect.spawn('daomatch')
-
-			# daomatch.expect("Master input file:")
-			# daomatch.sendline(star_name + '_' + wavelength + '_' + epoch_string + '_d' +str(start_dither)+'_cbcd_dn.alf') # Give it the first BCD phot file
-			# daomatch.expect("Output file name")
-			# daomatch.sendline(star_name + '_' + wavelength +'_f'+ field +'_master.mch')
-			# daomatch.expect("New output file name")
-			# daomatch.sendline("")
-			# daomatch.expect("Next input file:")
-			# daomatch.sendline(star_name + '_' + wavelength + '_' + epoch_string + '_d' + str(start_dither + 1)+'_cbcd_dn.alf/') # Give it the second BCD phot file
-			# daomatch.expect("Next input file")
-			# daomatch.sendline(star_name + '_' + wavelength + '_' + epoch_string +'_d' + str(start_dither + 2)+'_cbcd_dn.alf/') # Give it the third BCD phot file
-			# daomatch.expect("Next input file")
-			# daomatch.sendline(star_name + '_' + wavelength + '_' + epoch_string + '_d' + str(start_dither + 3)+'_cbcd_dn.alf/') # Give it the fourth BCD phot file
-			# daomatch.expect("Next input file")
-			# daomatch.sendline(star_name + '_' + wavelength + '_' + epoch_string + '_d' + str(start_dither + 4)+'_cbcd_dn.alf/') # Give it the fifth BCD phot file
-			# daomatch.expect("Next input file")
-			# daomatch.sendline("") # exit
-			# daomatch.expect("Good bye")
-			# daomatch.close(force=True)	
+	
 			
 
 			"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
