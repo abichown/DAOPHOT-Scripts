@@ -10,7 +10,7 @@ import pandas as pd
 from astropy.io import fits
 
 # Read star info
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'Channel'])
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 for i in range(0, len(df)):
 
@@ -61,7 +61,10 @@ for i in range(0, len(df)):
 	f.write(str(target_star) + '\n')
 	f.write(str(period) + '\n')
 	f.write(str(1) + '\n') # doesn't matter what goes here as it's not used by GLOESS code
-	f.write(str(0.2) + '\n') # value for fitting procedure
+
+	if period <= 12:
+		f.write(str(0.25) + '\n') 
+	else: f.write(str(0.2) + '\n')
 
 	for x in range(0, n_obs):
 		f.write(str(hmjd[x]) + ' ' + str(magnitudes[x]) + ' ' + str(errors[x]) + '\n')

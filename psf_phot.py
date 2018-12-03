@@ -13,7 +13,7 @@ import shutil
 import sys
 
 # Load stars and epochs to perform photometry on
-stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period','Channel'])
+stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period', 'RA', 'Dec', 'Channel'])
 
 
 # Iterate over every line in text file

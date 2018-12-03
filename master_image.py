@@ -9,10 +9,14 @@ import pandas as pd
 import os
 import pexpect
 import shutil
+import numpy as np
+import astropy.io.fits as fits
 
+import matplotlib.pyplot as plt
+from kneed import DataGenerator, KneeLocator
 
 # Get list of fields to make master images for 
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, usecols=[0,1,2,3], names=['Galaxy', 'Star', 'Period', 'Channel'])
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 # No longer need these as won't have duplicates
 #df.drop_duplicates(inplace=True)
@@ -223,6 +227,92 @@ for i in range(0,len(df)):
 		montage2.expect("Good bye")
 		montage2.close(force=True)
 
+		mch_file = star_name + '_' + wavelength + '_f' + field +'.mch'
+		shutil.copy(mch_file, star_name + '_' + wavelength + '_f' + field +'_full.mch') # want to keep list of all frames
+
+		# Check whether weightings are good
+		check = False
+
+		while check == False:
+
+			f = open('montage_log.txt', 'r')
+
+			weights = []
+
+			for line in f:
+				y = line.split()
+
+				for i in range(1,len(y)):
+					if y[i] == 'weight':
+						weights.append(y[i+2]) # this is the weights value
+
+			weights = np.array(weights) # convert to array
+			weights = weights.astype(float) # convert from strings to floats
+
+			bad_frame_list = []
+
+			# Check for bad frames
+			for i in weights:
+				if i < 200:
+					bad_frame_list.append(i)
+
+			if len(bad_frame_list) > 0:
+				bad = True 
+			else: 
+				bad = False
+				check = True # no bad frames so don't need to do anything
+
+			# If there was a bad weighting, then want to remove this image from the match file
+			if bad == True:
+
+				bad_frame_value = max(weights) # value of the bad frame
+
+				g = open('montage_log.txt', 'r')
+
+				for line in g:
+					y = line.split()
+
+					for i in range(1,len(y)):
+						if y[i] == 'weight':
+							if float(y[i+2]) == bad_frame_value:
+								bad_frame = y[i+4] # this gets the file name of the bad frame
+
+				# Remove bad frame 
+
+				with open(mch_file) as oldfile, open(mch_file+'_new', 'w') as newfile:
+					for line in oldfile:
+						if bad_frame not in line:
+							newfile.write(line)
+
+				shutil.copy(mch_file+'_new',  mch_file)
+
+				# Re run MONTAGE2
+				montage2 = pexpect.spawn('montage2')
+
+				# Set up log file
+				fout = file('montage_log.txt','w')
+				montage2.logfile = fout
+
+				montage2.expect("File with transformations:")
+				montage2.sendline(mch_file)
+				montage2.expect("Image-name suffix:")
+				montage2.sendline("")
+				montage2.expect("Minimum number of frames, percentile:")
+				montage2.sendline("1,0.5") # play around with minimum number of frames
+				montage2.expect("X limits of output image:")
+				montage2.sendline("e")
+				montage2.expect("Y limits of output image:")
+				montage2.sendline("e")
+				montage2.expect("Expansion factor:")
+				montage2.sendline("1") # creates image with same scale as bcd images
+				montage2.expect("Determine sky from overlap region?")
+				montage2.sendline("y")
+				montage2.expect("Name for output image")
+				montage2.sendline(star_name + '_' + wavelength + '_f' + field + '.fits')
+				montage2.expect("Good bye")
+				montage2.close(force=True)				
+
+
 		# Write down X and Y offsets
 		log = open('montage_log.txt', 'r')
 		lines = log.readlines()
@@ -257,16 +347,82 @@ for i in range(0,len(df)):
 		daophot.expect("File with parameters")
 		daophot.sendline("")
 		daophot.expect("OPT>")
+		#daophot.sendline("th=2")
 		daophot.sendline("th=20") 
 		daophot.expect("OPT>")
 		daophot.sendline("")
 
+		# daophot.expect("Command:")
+		# daophot.sendline("fi")
+		# daophot.expect("Number of frames averaged, summed:")
+		# daophot.sendline(str(num_images)+",1")
+		# daophot.expect("File for positions")
+		# daophot.sendline("")
+
+		# # Needs to store the number of detections for the threshold
+		# for threshold in range(3,61):
+
+		# 	daophot.expect("Are you happy with this?")
+		# 	daophot.sendline("n")
+		# 	daophot.expect("New threshold")
+		# 	daophot.sendline(str(threshold))
+		# 	daophot.expect("Output file name")
+		# 	daophot.sendline("")
+		# 	daophot.expect("New output file name")
+		# 	daophot.sendline("")
+
+		# # Last threshold = 60
+		# daophot.expect("Are you happy with this?")
+		# daophot.sendline("y")
+
+		# # Open log file, extract number of detections at each threshold
+		# log = open('daophot_log.txt', 'r')
+		# split = log.read().split()
+
+		# num_det = []
+
+		# for i in range(0,58):
+		# 	index = -8 -i*40
+		# 	num_det.append(split[index])
+
+		# # Reverse order so threshold increases and detections decrease
+		# num_det = num_det[::-1]
+		# thresholds = range(2,60)
+
+		# print thresholds
+		# print num_det
+
+		# plt.clf()
+
+		# plt.scatter(thresholds, num_det)
+		# plt.show()
+
+		# # Package that finds the elbow/knee of a curve - this will be the optimal detection threshold
+		# kn = KneeLocator(thresholds, num_det, direction='decreasing')
+		# print "Knee = " + str(kn.knee)
+
+
+		# daophot.expect("Are you happy with this?")
+		# daophot.sendline("y")
+
+		# # Then run FIND with this desired threshold
+		# daophot.expect("Command:")
+		# daophot.sendline("opt")
+		# daophot.expect("File with parameters")
+		# daophot.sendline("")
+		# daophot.expect("OPT>")
+		# daophot.sendline("th="+str(kn.knee)) # now set to best threshold
+		# daophot.expect("OPT>")
+		# daophot.sendline("")
+
 		daophot.expect("Command:")
 		daophot.sendline("fi")
 		daophot.expect("Number of frames averaged, summed:")
-		daophot.sendline(str(num_images)+",1")
+		daophot.sendline(str(num_images)+",1") 
 		daophot.expect("File for positions")
 		daophot.sendline("")
+		# daophot.expect("New output file name")
+		# daophot.sendline("")
 		daophot.expect("Are you happy with this?")
 		daophot.sendline("y")
 
@@ -290,8 +446,89 @@ for i in range(0,len(df)):
 		daophot.sendline("20,99")
 		daophot.expect("Output file name")
 		daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.lst') 
+		daophot.expect("Command:")
+		daophot.sendline("ex")
 
-		# Now create initial estimate of a PSF model to be used in allstar in next step of this script
+		daophot.close(force=True)
+
+		# Now run these candidate PSF stars through the series of tests to get rid of bad stars
+
+		# Read in FITS image
+		hdulist = fits.open(star_name + '_' + wavelength + '_f' + field +'.fits')
+
+		# Access the primary header-data unit (HDU)
+		hdu = hdulist[0]
+		data = hdu.data
+
+		# Obtain the length of the x and y axis of the image
+		x_axis = hdulist[0].header['NAXIS1']
+		y_axis = hdulist[0].header['NAXIS2']
+
+		centre = [x_axis/2, y_axis/2] # centre of frame
+
+		# Obtain lower and upper x and y limits for Test 1
+		x_lo = centre[0] - (3*centre[0])/4
+		x_up = centre[0] + (3*centre[0])/4
+		y_lo = centre[1] - (3*centre[1])/4
+		y_up = centre[1] + (3*centre[1])/4
+
+		df2 = pd.read_csv(star_name + '_' + wavelength + '_f' + field + '.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+
+		# Carry out all the tests on each star in the df
+		for index, row in df2.iterrows():
+
+			execute = 1
+
+			# TEST 1 : TOO CLOSE TO EDGE OF FRAME
+
+			# If X < x_lo or X > x_up, drop row
+			if row['X'] < x_lo or row['X'] > x_up:
+				df2.drop(index, inplace=True)
+				print "Deleting star %d because it is too close to edge of frame" % index
+				execute = 0 # don't need to carry out rest of tests
+
+			if execute == 1:
+
+				# If Y < y_lo or Y > y_up, drop row
+				if row['Y'] < y_lo or row['Y'] > y_up:
+					df2.drop(index, inplace=True)
+					print "Deleting star %d because it is too close to edge of frame" % index
+					execute = 0 # don't need to carry out rest of tests
+
+			# TEST 2 : NOT BRIGHT ENOUGH
+
+			# Get x and y coords of the star in question
+			x_coord = int(round(row['X'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+			y_coord = int(round(row['Y'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+
+			if execute == 1:
+				if data[y_coord, x_coord] < 150:
+					df2.drop(index, inplace=True)
+					print "Deleting star %d because it is not bright enough" % index
+					execute = 0 # don't need to carry out rest of tests
+
+			# Write out final list of stars to the lst file in the correct format
+
+			# Get header of lst file
+			f = open(star_name + '_' + wavelength + '_f' + field + '.lst', 'r')
+			header = f.read().splitlines()[0:3]
+			f.close()
+
+			# Now overwrite this file
+			f = open(star_name + '_' + wavelength + '_f' + field + '.lst', 'w')
+			f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
+
+			# Send stars to lst file
+			df2.to_csv(f, sep=' ', mode='a', header=None) #.iloc[0:6]
+
+			f.close()
+
+		daophot = pexpect.spawn('daophot')
+
+		daophot.expect("Command:")
+		daophot.sendline("at " + star_name + '_' + wavelength + '_f' + field +'.fits')
+
+		# Now create PSF model to be used in allstar in next step of this script
 		daophot.expect("Command:")
 		daophot.sendline("psf")
 		daophot.expect("File with aperture results")
@@ -346,23 +583,15 @@ for i in range(0,len(df)):
 		daophot.close(force=True)	
 
 		# Change .ap file names in .mch file to .als
-		f = open(star_name +'_' + wavelength + '_f'+field+'.mch', 'r')
+		f = open(star_name +'_' + wavelength + '_f'+field+'_full.mch', 'r')
 		filedata = f.read()
 		f.close()
 
 		newdata = filedata.replace(".ap",".als")
 
-		f = open(star_name +'_' + wavelength + '_f'+field+'.mch','w')
+		f = open(star_name +'_' + wavelength + '_f'+field+'_full.mch','w')
 		f.write(newdata)
 		f.close()	
-
-		# NOW MAKE PSF MODEL FROM STARS IN MASTER IMAGE
-
-		# Run DAOPHOT to initially pick some stars
-
-		# Perform any quality tests to remove bad stars
-
-		# Create final PSF model 
 
 		# Now copy the master image and the master star list to each of the epochs 
 		for epoch in range(1,num_epochs+1):
@@ -373,7 +602,7 @@ for i in range(0,len(df)):
 			else: epoch = str(epoch)
 
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.fits')
-			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.mch', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mch')
+			shutil.copy(star_name + '_' + wavelength + '_f' + field + '_full.mch', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mch')
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.mag', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.mag')
 			shutil.copy(star_name + '_' + wavelength + '_f' + field + '.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_' + wavelength + '_f' + field + '_master.psf')
 

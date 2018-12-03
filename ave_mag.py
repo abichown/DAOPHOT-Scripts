@@ -13,7 +13,7 @@ import numpy as np
 from math import sqrt, log10
 
 # Set up data frame from txt file of stars (sys.argv[1]) to do it on
-df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'Channel'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 # Loop over each row in txt file
 # Also loop over the two dither combinations

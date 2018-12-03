@@ -18,7 +18,7 @@ start = time.time()
 
 # Open list of star names
 # Format of the file is: GALAXY STAR_NAME PERIOD CHANNEL
-stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period','Channel'])
+stars = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period', 'RA', 'Dec', 'Channel'])
 
 # Iterate over every line in text file
 for i in range(0, len(stars)):

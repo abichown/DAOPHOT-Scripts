@@ -18,7 +18,7 @@ rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['Garamond']
 
 
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, names=['Galaxy', 'Star', 'Period', 'Channel'], delim_whitespace=True)
+df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'], delim_whitespace=True)
 
 for i in range(0, len(df)):
 

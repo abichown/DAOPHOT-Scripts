@@ -44,29 +44,61 @@ def format_alf(row_of_df, start_dither):
 
 	return(0)
 
+def daomatch_ap_epoch(row_of_df, start_dither):
+
+	# Run DAOMATCH on the 5 ap files for this field and this epoch
+	daomatch = pexpect.spawn('daomatch')
+
+	fout = file('ap_log.txt','w')
+	daomatch.logfile = fout
+
+	# Input epoch 1 first dither of field as master input file
+	daomatch.expect("Master input file:")
+	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number +'_d' + str(start_dither) + '_cbcd_dn.ap') # Give it the first BCD phot file
+	daomatch.expect("Output file name")
+	daomatch.sendline(target_name + '_ap.mch')
+	daomatch.expect("Next input file:")
+	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number+'_d'+str(start_dither + 1)+'_cbcd_dn.ap/') # Give it the second BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number+'_d'+str(start_dither + 2)+'_cbcd_dn.ap/') # Give it the third BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number+'_d'+str(start_dither + 3)+'_cbcd_dn.ap/') # Give it the fourth BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number+'_d'+str(start_dither + 4)+'_cbcd_dn.ap/') # Give it the fifth BCD phot file
+	daomatch.expect("Next input file")
+	daomatch.sendline("") # exit
+
+	daomatch.expect("Good bye.")
+
+	daomatch.close(force=True)
+
 
 def daomaster(row_of_df, start_dither):
 
 	# File with the coordinate transformations in
-	match_file = target_name + '_' + wavelength + '_f' + str(field) + '_master.mch'
+	match_file = target_name + '_ap.mch'
 
-	# Change the file extensions in the .mch file from .alf to .alf_all
+	# Change the file extensions in the .mch file from .ap to .alf_all
 	f = open(match_file, 'r')
 	filedata = f.read()
 	f.close()
 
-	newdata = filedata.replace(".alf",".alf_all")
+	#newdata = filedata.replace(".ap",".alf_all")
+	newdata = filedata.replace(".ap",".alf_all")
 
 	f = open(match_file,'w')
 	f.write(newdata)
 	f.close()
 
-	# Copy epoch 1 dither 1/6 .alf_all file
-	if epoch_number != '01':
-		shutil.copy(home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e01/' + target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all', target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all')
+	# # Copy epoch 1 dither 1/6 .alf_all file
+	# if epoch_number != '01':
+	# 	shutil.copy(home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e01/' + target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all', target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all')
 
 	# Run DAOMASTER - use coordinate transformations from previous steps
 	daomaster = pexpect.spawn('daomaster')
+
+	fout = file('daomaster_log.txt', 'w')
+	daomaster.logfile = fout
 
 	daomaster.expect("File with list of input files:")
 	daomaster.sendline(match_file)
@@ -118,24 +150,28 @@ def daomaster(row_of_df, start_dither):
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("e") # exits rest of options
 
-	# If not epoch 1, then want to remove the 2 extra columns in the '.cal file'
-	if epoch_number != '01':
+	# # If not epoch 1, then want to remove the 2 extra columns in the '.cal file'
+	# if epoch_number != '01':
 
-		cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'E01_mag', 'E01_err', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'])
-		cal_data.dropna(axis=0, subset=['M3'], inplace=True)
-		cal_data.reset_index(drop=True, inplace=True)
+	# 	cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'E01_mag', 'E01_err', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'])
+	# 	cal_data.dropna(axis=0, subset=['M3'], inplace=True)
+	# 	cal_data.reset_index(drop=True, inplace=True)
 		
-		# Now drop 'EO1' columns
-		cal_data.drop(['E01_mag', 'E01_err'], axis=1, inplace=True)
+	# 	# Now drop 'EO1' columns
+	# 	cal_data.drop(['E01_mag', 'E01_err'], axis=1, inplace=True)
 
-		# Write out to new file
-		cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
+	# 	# Write out to new file
+	# 	cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
 
-	else:
+	# else:
 
-		# Now just want to get rid of header so e01 and not e01 have same format of file
-		cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'], usecols=[0,1,2,3,4,5,6,7,8,9,10,11,12])
-		cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
+	# 	# Now just want to get rid of header so e01 and not e01 have same format of file
+	# 	cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'], usecols=[0,1,2,3,4,5,6,7,8,9,10,11,12])
+	# 	cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
+
+	# Now just want to get rid of header so e01 and not e01 have same format of file
+	cal_data = pd.read_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', skiprows=3, header=None, delim_whitespace=True, names=['ID', 'X', 'Y', 'M1', 'E1', 'M2', 'E2', 'M3', 'E3', 'M4', 'E4', 'M5', 'E5'], usecols=[0,1,2,3,4,5,6,7,8,9,10,11,12])
+	cal_data.to_csv(target_name + '_' + wavelength + '_f' + str(field) + '.cal', sep=' ', index=False)
 
 	return(0)
 
@@ -145,7 +181,7 @@ def daomaster(row_of_df, start_dither):
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 # Read in list of stars that need converting
-df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'Channel'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 for i in range(0, len(df)):
 	for j in [6]: # [1,6] when both fields work 
@@ -199,6 +235,8 @@ for i in range(0, len(df)):
 
 			# Convert alf_apc file to standard format for DAOMATCH
 			format_alf(i,j)
+
+			daomatch_ap_epoch(i,j)
 
 			# Do DAOMATCH and DAOMASTER
 			daomaster(i,j)
