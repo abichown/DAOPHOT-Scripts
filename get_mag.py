@@ -16,7 +16,7 @@ from math import sqrt
 
 
 # Read star list
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 for i in range(0, len(df)):
 
@@ -58,6 +58,8 @@ for i in range(0, len(df)):
 
 	count = 0
 
+	print star
+
 	for epoch in range(1,num_epochs+1):
 
 		# Get epoch in correct form
@@ -78,6 +80,8 @@ for i in range(0, len(df)):
 
 		# Coordinates we want to compare .ave file with
 		pix_coord = pix[0] # just as a list. x = pix_coord[0] and y = pix_coord[1]
+
+		print "Pixel coordinates from NED for epoch " + str(epoch) + " : x = " + str(pix_coord[0]) + "y = " + str(pix_coord[1])
 
 		# Open file containing average magnitudes
 		ave_file = star + '_' + wavelength + '_f' + field + '.ave'

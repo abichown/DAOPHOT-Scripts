@@ -301,7 +301,7 @@ def loc_corr(row_of_df, start_dither):
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 for i in range(0, len(df)):
-	for j in [6]: #[1,6] when got both fields working 
+	for j in [1,6]: #[1,6] when got both fields working 
 
 		# Initial setup
 		galaxy = df['Galaxy'][i]

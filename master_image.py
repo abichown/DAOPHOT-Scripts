@@ -11,12 +11,13 @@ import pexpect
 import shutil
 import numpy as np
 import astropy.io.fits as fits
+import sys
 
 import matplotlib.pyplot as plt
 from kneed import DataGenerator, KneeLocator
 
 # Get list of fields to make master images for 
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 # No longer need these as won't have duplicates
 #df.drop_duplicates(inplace=True)
@@ -471,8 +472,14 @@ for i in range(0,len(df)):
 		x_up = centre[0] + (3*centre[0])/4
 		y_lo = centre[1] - (3*centre[1])/4
 		y_up = centre[1] + (3*centre[1])/4
+		# x_lo = centre[0] - (9*centre[0])/10
+		# x_up = centre[0] + (9*centre[0])/10
+		# y_lo = centre[1] - (9*centre[1])/10
+		# y_up = centre[1] + (9*centre[1])/10
 
 		df2 = pd.read_csv(star_name + '_' + wavelength + '_f' + field + '.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+
+		deleted_stars = 0 
 
 		# Carry out all the tests on each star in the df
 		for index, row in df2.iterrows():
@@ -484,7 +491,8 @@ for i in range(0,len(df)):
 			# If X < x_lo or X > x_up, drop row
 			if row['X'] < x_lo or row['X'] > x_up:
 				df2.drop(index, inplace=True)
-				print "Deleting star %d because it is too close to edge of frame" % index
+				deleted_stars += 1
+				#print "Deleting star %d because it is too close to edge of frame" % index
 				execute = 0 # don't need to carry out rest of tests
 
 			if execute == 1:
@@ -492,7 +500,8 @@ for i in range(0,len(df)):
 				# If Y < y_lo or Y > y_up, drop row
 				if row['Y'] < y_lo or row['Y'] > y_up:
 					df2.drop(index, inplace=True)
-					print "Deleting star %d because it is too close to edge of frame" % index
+					deleted_stars += 1
+					#print "Deleting star %d because it is too close to edge of frame" % index
 					execute = 0 # don't need to carry out rest of tests
 
 			# TEST 2 : NOT BRIGHT ENOUGH
@@ -504,10 +513,13 @@ for i in range(0,len(df)):
 			if execute == 1:
 				if data[y_coord, x_coord] < 150:
 					df2.drop(index, inplace=True)
-					print "Deleting star %d because it is not bright enough" % index
+					deleted_stars += 1
+					#print "Deleting star %d because it is not bright enough" % index
 					execute = 0 # don't need to carry out rest of tests
 
 			# Write out final list of stars to the lst file in the correct format
+
+			print "Stars remaining: " + str(20-deleted_stars)
 
 			# Get header of lst file
 			f = open(star_name + '_' + wavelength + '_f' + field + '.lst', 'r')

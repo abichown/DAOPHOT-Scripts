@@ -18,7 +18,8 @@ from search_files import unsorted_files
 def find_bcd_a_home():
 
 	# Home to all the unorganised 'raw' (for want of a better word) data
-	os.chdir('/mnt/ac833-XDrive/Physics/ResearchProjects/VScowcroft/Scowcroft_Astro/Spitzer/LMC/AORs/')
+	os.chdir('/home/ac833/Downloads/P61004/')
+	#os.chdir('/mnt/ac833-XDrive/Physics/ResearchProjects/VScowcroft/EA-PH1166/Raw_Data/LMC/')
 
 	# Search folders for files and write to text file '~/unsorted_files.txt'
 	unsorted_files()

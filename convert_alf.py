@@ -46,6 +46,12 @@ def format_alf(row_of_df, start_dither):
 
 def daomatch_ap_epoch(row_of_df, start_dither):
 
+	if start_dither == 1:
+		field = '1'
+	elif start_dither == 6:
+		field = '2'
+	else: field = 'invalid'
+
 	# Run DAOMATCH on the 5 ap files for this field and this epoch
 	daomatch = pexpect.spawn('daomatch')
 
@@ -56,7 +62,7 @@ def daomatch_ap_epoch(row_of_df, start_dither):
 	daomatch.expect("Master input file:")
 	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number +'_d' + str(start_dither) + '_cbcd_dn.ap') # Give it the first BCD phot file
 	daomatch.expect("Output file name")
-	daomatch.sendline(target_name + '_ap.mch')
+	daomatch.sendline(target_name + '_f' + field + '_ap.mch')
 	daomatch.expect("Next input file:")
 	daomatch.sendline(target_name + '_' + wavelength + '_e' + epoch_number+'_d'+str(start_dither + 1)+'_cbcd_dn.ap/') # Give it the second BCD phot file
 	daomatch.expect("Next input file")
@@ -75,8 +81,14 @@ def daomatch_ap_epoch(row_of_df, start_dither):
 
 def daomaster(row_of_df, start_dither):
 
+	if start_dither == 1:
+		field = '1'
+	elif start_dither == 6:
+		field = '2'
+	else: field = 'invalid'
+
 	# File with the coordinate transformations in
-	match_file = target_name + '_ap.mch'
+	match_file = target_name + '_f' + field + '_ap.mch'
 
 	# Change the file extensions in the .mch file from .ap to .alf_all
 	f = open(match_file, 'r')
@@ -93,6 +105,20 @@ def daomaster(row_of_df, start_dither):
 	# # Copy epoch 1 dither 1/6 .alf_all file
 	# if epoch_number != '01':
 	# 	shutil.copy(home + str(galaxy) + '/BCD/' + target_name + '/ch' + str(df['Channel'][i]) + '/e01/' + target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all', target_name + '_' + wavelength + '_e01_d' + str(start_dither) + '_cbcd_dn.alf_all')
+
+	# Check alf_all files actually contain at least one star.
+	# If one doesn't, then add a fake star just so DAOMASTER will run
+	for dither in range(start_dither, start_dither+5):
+
+		num_lines = sum(1 for line in open(target_name + '_' + wavelength + '_e' + epoch_number + '_d' + str(dither) + '_cbcd_dn.alf_all'))
+
+		if num_lines <= 3:
+
+			# Open file and append a fake star to it
+			with open(target_name + '_' + wavelength + '_e' + epoch_number + '_d' + str(dither) + '_cbcd_dn.alf_all', "a") as myfile:
+				myfile.write("1 100.00 100.00 10.000 1.000 0.01 -0.1 5.0 1.00 0.01") # fake data that shouldn't be matched to anything
+
+
 
 	# Run DAOMASTER - use coordinate transformations from previous steps
 	daomaster = pexpect.spawn('daomaster')
@@ -184,7 +210,7 @@ def daomaster(row_of_df, start_dither):
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 for i in range(0, len(df)):
-	for j in [6]: # [1,6] when both fields work 
+	for j in [1,6]: # [1,6] when both fields work 
 
 		# Initial setup
 		galaxy = df['Galaxy'][i]

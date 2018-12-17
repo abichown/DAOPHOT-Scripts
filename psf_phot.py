@@ -84,7 +84,6 @@ for i in range(0, len(stars)):
 				allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dn.als')
 				allstar.expect("Name for subtracted image")
 				allstar.sendline(star_name + '_' + wavelength + '_e'+ epoch_number + '_d' + str(dither) + '_cbcd_dns.fits')
-
 				allstar.expect("Good bye")
 				allstar.close(force=True)			
 
