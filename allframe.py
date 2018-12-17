@@ -9,10 +9,11 @@ import pandas as pd
 import os
 import pexpect
 import shutil
+import sys
 
 
 # Get list of fields to make images for i.e. count unique fields in test_star.txt
-df = pd.read_csv('/home/ac833/DAOPHOT-Scripts/star_list.txt', header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
+df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star', 'Period', 'RA', 'Dec', 'Channel'])
 
 # Don't need this now since won't have any duplicate lines
 #df.drop_duplicates(inplace=True)
