@@ -1934,8 +1934,8 @@ def gloess_single_band(star_name, galaxy, channel, wavelength):
 	maxlim = max + 0.5
 	minlim = min - 0.5
 
-	print cepname, ' ---- Period =', period, 'days'
-	print '------------------------------------------------------'
+	#print cepname, ' ---- Period =', period, 'days'
+	#print '------------------------------------------------------'
 
 	################################################################################################
 	# 								FIT GLOESS CURVE TO DATA
