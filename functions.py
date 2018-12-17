@@ -14,7 +14,7 @@ import pandas as pd
 import time
 import numpy as np
 import astropy.io.fits as fits
-from math import log10, sqrt
+from math import log10, sqrt, exp
 from astropy import wcs
 
 import matplotlib.pyplot as plt
@@ -1336,15 +1336,89 @@ def calibration_procedure(star_name, galaxy, channel, wavelength, epoch_number, 
 		# 								  WRITE OUT TO NEW FILE
 		################################################################################################
 
-		# Make new filename by replacing .alf_loc with .alf_cal
-		# This is currently the last correction so append _cal but need to add pixel phase correction
-		alf = alf.replace('.alf_zp', '.alf_cal')
+		# Make new filename by replacing .alf_zp with .alf_loc
+		alf = alf.replace('.alf_zp', '.alf_loc')
 		df.to_csv(alf, sep=' ', index=False)
 
 
 	################################################################################################
 	# 								PIXEL PHASE CORRECTION
-	################################################################################################	
+	################################################################################################
+
+	################################################################################################
+	# 									SET UP PARAMETERS
+	################################################################################################
+
+	# Set parameters for aperture = 3, inner sky = 12, outer sky = 20
+	if channel == '1':
+		x0 = 0.190
+		y0 = 0.022
+		sig_x = 0.189
+		sig_y = 0.164
+		delf_x = 0.0327
+		delf_y = 0.0544
+		f0 = 0.962
+	elif channel == '2':
+		x0 = 0.070
+		y0 = 0.098
+		sig_x = 0.203
+		sig_y = 0.216
+		delf_x = 0.0175
+		delf_y = 0.0186
+		f0 = 0.981
+	else: x0 = 'break'		
+
+	################################################################################################
+	# 								APPLY PIXEL PHASE CORRECTION
+	################################################################################################
+
+	# Loop over all '.alf' files and correct
+	for alf in alf_files:	
+
+		# Get files that have been aperture corrected, std aperture, zmag corrected and location corrected
+		alf = alf.replace('.alf', '.alf_loc')
+
+		# Load .alf_zp file into df
+		df = pd.read_csv(alf, header=0, delim_whitespace=True)
+
+		# Loop over every star in file
+		for index in range(0, len(df)):
+
+			if df['mag'][index] != 99.999:
+
+				# Get x and y coords
+				x = float(df['x'][index])
+				y = float(df['y'][index])
+
+				# Convert magnitude to flux
+				flux = 10 ** (df['mag'][index]/-2.5)
+
+				# Convert x and y coords of star to a phase
+				x_phase = x - int(x) - 0.5
+				y_phase = y - int(y) - 0.5
+
+				# Calculate distances dx and dy between centre of star and most responsive part of pixel
+				dx = x_phase - x0
+				dy = y_phase - y0
+
+				# Compute relative flux
+				relative_flux = delf_x * exp((-(dx**2))/(2*sig_x**2)) + delf_y * exp(-(dy**2)/(2*sig_y**2)) + f0
+
+				# Compute corrected flux
+				corrected_flux = flux / relative_flux
+
+				# Convert corrected flux back to magnitude
+				df.loc[index, 'mag'] = -2.5 * log10(corrected_flux)
+
+
+		################################################################################################
+		# 								  WRITE OUT TO NEW FILE
+		################################################################################################
+
+		# Make new filename by replacing .alf_loc with .alf_cal
+		# This is the final correction
+		alf = alf.replace('.alf_loc', '.alf_cal')
+		df.to_csv(alf, sep=' ', index=False)
 
 	return(0)
 
@@ -1929,5 +2003,5 @@ def gloess_single_band(star_name, galaxy, channel, wavelength):
 
 	f.write(str(galaxy) + ' ' + str(star_name) + ' ' + str(channel) + ' ' + str(period) + ' ' + str(round(aveir1,2)) + ' ' + str(round(std_error, 4)) + ' ' + str(round(ampir1,4)) + '\n' ) 
 	f.close()
-	
+
 	return(0)

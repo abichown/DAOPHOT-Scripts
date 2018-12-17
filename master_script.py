@@ -18,7 +18,7 @@ import pandas as pd
 import time
 import numpy as np
 import astropy.io.fits as fits
-from math import log10, sqrt
+from math import log10, sqrt, exp
 from astropy import wcs
 
 import matplotlib.pyplot as plt
@@ -200,7 +200,7 @@ for i in range(0, len(df)):
 	# 2. Standard aperture correction
 	# 3. Zero point correction
 	# 4. Location correction
-	# 5. Pixel phase correction - not implemented yet
+	# 5. Pixel phase correction 
 	# Files created are .alf_cal files
 
 	print "Calibration to standard system"
