@@ -20,6 +20,18 @@ from astropy import wcs
 import matplotlib.pyplot as plt
 from kneed import DataGenerator, KneeLocator
 
+import matplotlib
+import gloess_fits as gf
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.gridspec as gridspec
+
+os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
+matplotlib.rc('text',usetex=True)
+from matplotlib import rcParams
+
+rcParams['font.family'] = 'serif'
+rcParams['font.serif'] = ['Garamond']
+
 # Aperture photometry
 def aper_phot(star_name, galaxy, channel, wavelength, epoch_number):
 
@@ -1631,7 +1643,7 @@ def get_mag(star_name, galaxy, channel, wavelength, num_epochs, ra, dec):
 	# Open file to write mag and error to 
 	filename = '/home/ac833/Magnitudes/' + galaxy + '/' + star_name + '_' + wavelength +'.txt'
 	f = open(filename, 'w')
-	f.write("Epoch Mag Error Std_err \n") # THIS NEEDS MODIFYING I THINK
+	f.write("Epoch   ID   X   Y   Mag   Error   Std_err \n") # THIS NEEDS MODIFYING I THINK
 
 	count = 0 # counts how many epochs star was found in --> should equal num_epochs
 
@@ -1682,18 +1694,240 @@ def get_mag(star_name, galaxy, channel, wavelength, num_epochs, ra, dec):
 					f.writelines("%s %f %f %f %f %f %f \n" % (epoch, float(ave['ID'][i]), float(ave['X'][i]), float(ave['Y'][i]), float(ave['m_ave'][i]), float(ave['e_ave'][i]), float(ave['std_err'][i])))
 					count += 1
 
-	print count
+	print "Epochs found = " + str(count)
 
 	f.close()
 
 	return(0)
 
 # Format to GLOESS-style file
-def format_gloess():
+def format_gloess(star_name, galaxy, channel, wavelength, num_epochs, period):
+
+	################################################################################################
+	# 								GET HMJD FOR EACH EPOCH
+	################################################################################################
+
+	hmjd = []
+
+	for j in range(1,num_epochs+1):
+
+		if j < 10:
+			filename = '/home/ac833/Data/'+str(galaxy)+'/BCD/'+str(star_name)+'/ch'+str(channel)+'/e0'+str(j)+'/'+str(star_name)+'_'+str(wavelength)+'_e0'+str(j)+"_d1_cbcd_dn.fits"
+		else: filename = '/home/ac833/Data/'+str(galaxy)+'/BCD/'+str(star_name)+'/ch'+str(channel)+'/e'+str(j)+'/'+str(star_name)+'_'+str(wavelength)+'_e'+str(j)+"_d1_cbcd_dn.fits"
+
+		image = fits.open(filename)
+		header = image[0].header
+		hmjd.append(header['HMJD_OBS'])
+
+
+	################################################################################################
+	# 								GET MAGNITUDES AND ERRORS
+	################################################################################################
+
+	mag_file = '/home/ac833/Magnitudes/'+str(galaxy)+'/'+str(star_name)+'_'+wavelength+'.txt'
+	mags = pd.read_csv(mag_file, header=0, delim_whitespace=True)
+	magnitudes = list(mags['Mag'])
+	errors = list(mags['Std_err'])
+
+
+	################################################################################################
+	# 									WRITE OUT NEW FILE
+	################################################################################################
+
+	output_filename = '/home/ac833/GLOESS_files/' + str(star_name) + '_' + wavelength + '_gloess.txt'
+
+	f = open(output_filename, 'w')
+	f.write(str(star_name) + '\n')
+	f.write(str(period) + '\n')
+	f.write(str(1) + '\n') # doesn't matter what goes here as it's not used by GLOESS code
+
+	# If short period then slightly relaxed fitting parameter of 0.25
+	# Longer period Cepheids generally have better light curves so can use a tighter fitting parameter of 0.20
+	if period <= 12:
+		f.write(str(0.25) + '\n') 
+	else: f.write(str(0.2) + '\n')
+
+	for x in range(0, num_epochs):
+		f.write(str(hmjd[x]) + ' ' + str(magnitudes[x]) + ' ' + str(errors[x]) + '\n')
+
+	f.close()
 
 	return(0)
 
 # Fit GLOESS
-def gloess_single_band():
+def gloess_single_band(star_name, galaxy, channel, wavelength):
 
+	################################################################################################
+	# 									READ IN DATA
+	################################################################################################
+
+	# This file has all the magnitudes
+	input_filename = '/home/ac833/GLOESS_files/' + star_name + '_' + wavelength + '_gloess.txt'
+
+	dir1 = [] # magnitudes
+	deir1 = [] # errors
+	dmjd = [] # hmjd of observations
+
+	counter = 0
+
+	## Want to know whether the IRAC data is phased or not. 
+	## If it is phased, must reduce the uncertainty by another factor of sqrt(N)
+	## if phased == 1 then true. if phased == 0, false
+	## The data is phased if Period > 12 days
+
+	for line in open(input_filename):
+
+		data = line.split()
+
+		# Counter always starts equal to 0 so this will always be the first line
+		if counter == 0:
+			# Cephied name	
+			cepname = data[0]
+		if counter == 1:
+			# if counter = 1 then the first element in this line of the input file is the period of the cepheid
+			period = float(data[0])
+			if period > 12:
+				# for Cepheids with periods > 12 days then the observations were taken equally spaced
+				# therefore, error scales with 1/N
+				phased = 1
+			else:
+				# for Cepheids with periods < 12 days they weren't equally spaced
+				# therefore, error scales with 1/sqrt(N)
+				phased = 0
+		if counter == 2:
+			# if counter = 2, the first element in this line of the input file is the number of lines
+			# this part of the code is redundant since don't use num_lines anymore
+			nlines = float(data[0])
+		if counter == 3:
+			# if counter = 3, this line of data contains the x values in all the 12 bands
+			# only doing one band here, so will only be one number
+			xir1 = float(data[0])
+		if counter > 3:
+			# if counter>3, then this line of the input consists of many values that get appended to the lists at the beginning of the code
+			# I think the d in front of du say is just so that when convert to numpy arrays the u isn't already taken
+			dmjd.append(float(data[0])) # hmjd
+			dir1.append(float(data[1])) # magnitude
+			deir1.append(float(data[2])) # error in magnitude
+
+		# Counter incrememnts so that each line from the input file is read 
+		counter  = counter + 1	
+			
+	## Read in all the data from the file and filled the arrays. Need to convert these to numpy arrays.
+
+	# Number of lines of data as opposed to the Name, period etc
+	number = counter - 4 # Number data lines in the file
+
+	# Convert to numpy arrays
+	ir1 = np.array(dir1)
+	eir1 = np.array(deir1)
+	mjd = np.array(dmjd)	
+
+	# Number of observations
+	nir1 = sum(ir1<50)
+
+
+	################################################################################################
+	# 									PHASE THE DATA
+	################################################################################################
+
+	# Phases don't need to be done individually by band - only depends on P
+	phase = (mjd / period) - np.floor(mjd / period)
+	multiple_phase = np.concatenate((phase,(phase+1.0),(phase+2.0),(phase+3.0),(phase+4.0)))
+
+
+	################################################################################################
+	# 								GET MAX AND MIN VALUES
+	################################################################################################
+
+	# These steps are more necessary when plotting multiple bands
+
+	maxvals = []
+	minvals = []
+
+	if nir1 > 0:
+		maxvals.append(np.amax(ir1[ir1<50]))
+		minvals.append(np.amin(ir1[ir1<50]))
+
+	# Convert the max and min values lists to np arrays
+	maxvals = np.array(maxvals)
+	minvals = np.array(minvals)
+
+	# Max and min across all bands are the largest values of the max and min arrays
+	max = np.max(maxvals)
+	min = np.min(minvals)
+
+	# Set max and min limits
+	maxlim = max + 0.5
+	minlim = min - 0.5
+
+	print cepname, ' ---- Period =', period, 'days'
+	print '------------------------------------------------------'
+
+	################################################################################################
+	# 								FIT GLOESS CURVE TO DATA
+	################################################################################################
+
+	# Clear figure
+	plt.clf()
+
+	# GridSpec specifies the geometry of the grid that a subplot will be placed. 
+	# The number of rows and number of columns of the grid need to be set.
+	# So here, we have 3 rows and 4 columns
+	gs = gridspec.GridSpec(3, 4)
+	ax1 = plt.subplot(gs[:,:]) # plot just takes up entire grid
+
+	# Values in the [] are xmin,xmax,ymin,ymax
+	ax1.axis([1,3.5,(maxlim),(minlim)])
+
+	titlestring = cepname + ', P = ' + str(period) + ' days'
+	plt.suptitle(titlestring, fontsize=20)
+
+	ax1.set_ylabel('Magnitude')
+	ax1.set_xlabel('Phase $\phi$')
+
+	## Fitting and plotting for each band
+	if nir1 > 0:
+
+		ir11, ir1x, yir1, yeir1, xphaseir1 = gf.fit_one_band(ir1,eir1,phase,nir1,xir1)
+
+		ax1.plot(ir1x,ir11,'k-')
+	 	ax1.plot(xphaseir1,yir1,color='MediumVioletRed',marker='o',ls='None', label='mag')
+
+		aveir1, adevir1, sdevir1, varir1, skewir1, kurtosisir1, ampir1 = gf.moment(ir11[200:300],100)
+
+		if phased == 1:
+			factor = sqrt(nir1)
+		if phased == 0:
+			factor = 1 
+		if nir1 > 1:
+			print  '<mag> = {0:.3f}    std dev = {1:.3f}     amplitude = {2:.3f}' .format(aveir1, sdevir1/factor, ampir1)
+		if nir1 == 1:
+			print  'mag = {0:.3f} --- single point'.format(aveir1)
+
+	handles, labels = ax1.get_legend_handles_labels() 
+
+	################################################################################################
+	# 						SAVE LIGHT CURVE AND MAGNITUDE TO FILE
+	################################################################################################
+
+	# Save light curve
+	lc_name = '/home/ac833/Light_Curves/' + galaxy +'/' + star_name + '_' + wavelength +'.png'
+	plt.savefig(lc_name)
+
+	# Output all relevant information to a file
+	# Galaxy, star, channel, period, mean mag, std_dev, amplitude
+
+	master_mags_file = '/home/ac833/master_stars.txt'
+
+	f = open(master_mags_file, 'a')
+
+	if phased == 1:
+		std_error = sdevir1/(factor ** 2) # error scales with 1/N
+	else:
+		std_error = sdevir1/factor # error scales with 1/sqrt(N)
+
+
+	f.write(str(galaxy) + ' ' + str(star_name) + ' ' + str(channel) + ' ' + str(period) + ' ' + str(round(aveir1,2)) + ' ' + str(round(std_error, 4)) + ' ' + str(round(ampir1,4)) + '\n' ) 
+	f.close()
+	
 	return(0)

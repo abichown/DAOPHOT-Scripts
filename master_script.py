@@ -24,7 +24,19 @@ from astropy import wcs
 import matplotlib.pyplot as plt
 from kneed import DataGenerator, KneeLocator
 
-from functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag
+import matplotlib
+import gloess_fits as gf
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.gridspec as gridspec
+
+os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
+matplotlib.rc('text',usetex=True)
+from matplotlib import rcParams
+
+rcParams['font.family'] = 'serif'
+rcParams['font.serif'] = ['Garamond']
+
+from functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag, format_gloess, gloess_single_band
 
 start = time.time()
 
@@ -50,6 +62,7 @@ for i in range(0, len(df)):
 	star_name = str(df['Star'][i])
 	ra = df['RA'][i]
 	dec = df['Dec'][i]
+	period = df['Period'][i]
 
 	if df['Channel'][i] == 1:
 		channel = '1'
@@ -109,6 +122,8 @@ for i in range(0, len(df)):
 	os.chdir(os.path.expanduser('../')) # move up a level into channel folder
 	master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
 
+	print "Off-target medianed image"
+
 	# Then move back into the epoch folders again
 	for epoch in range(1, num_epochs+1):
 
@@ -122,7 +137,6 @@ for i in range(0, len(df)):
 		os.chdir(cwd) 
 
 		# Make medianed image, master star list and master PSF model for off-target field i.e. field 1
-		print "Off-target medianed image for epoch " + epoch_number
 		master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
 
 
@@ -277,12 +291,12 @@ for i in range(0, len(df)):
 
 
 	# Format magnitude file into a way in which GLOESS code accpets
-	#print "Format to GLOESS format file"
-	#format_gloess()
+	print "Formating file to put through GLOESS"
+	format_gloess(star_name, galaxy, channel, wavelength, num_epochs, period)
 
 	# Run GLOESS fitting code to obtain mean magnitude and light curve for Cepheid
-	#print "Fitting GLOESS curve"
-	#gloess_single_band()
+	print "Fitting GLOESS curve"
+	gloess_single_band(star_name, galaxy, channel, wavelength)
 
 
 	#####################################################################################################
