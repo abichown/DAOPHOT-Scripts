@@ -1772,7 +1772,7 @@ def get_mag(star_name, galaxy, channel, wavelength, num_epochs, ra, dec):
 
 	f.close()
 
-	return(0)
+	return(count)
 
 # Format to GLOESS-style file
 def format_gloess(star_name, galaxy, channel, wavelength, num_epochs, period):
