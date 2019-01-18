@@ -6,8 +6,6 @@ The functions called upon here can be found in the functions.py script.
 Written by: Abi Chown A.H.Chown@bath.ac.uk
 '''
 
-## MIGHT NEED TO ADD MORE MODULES FOR GLOESS
-
 import sys
 import pexpect
 import shutil
@@ -22,7 +20,7 @@ from math import log10, sqrt, exp
 from astropy import wcs
 
 import matplotlib.pyplot as plt
-from kneed import DataGenerator, KneeLocator
+#from kneed import DataGenerator, KneeLocator
 
 import matplotlib
 import gloess_fits as gf
@@ -37,6 +35,8 @@ rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['Garamond']
 
 from functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag, format_gloess, gloess_single_band
+
+sys.settrace('line')
 
 start = time.time()
 
@@ -299,7 +299,7 @@ for i in range(0, len(df)):
 	gloess_single_band(star_name, galaxy, channel, wavelength)
 
 	print '------------------------------------------------------'
-	
+
 	#####################################################################################################
 	# 								REPEAT ON ALL STARS IN FILE 
 	#####################################################################################################
