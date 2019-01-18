@@ -99,15 +99,20 @@ def aper_phot(star_name, galaxy, channel, wavelength, epoch_number):
 # Master image on target
 def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs):
 
+	if channel == '1':
+		field = '2' # the on-target images are the second 5 dithers d6-10
+		start_dither = 6
+	else:
+		field = '1' # the on-target images are the first 5 dithers d1-5
+		start_dither = 1
+
 	num_images = num_epochs * 5 # 5 dithers per epoch 
-	field = '2' # this image is referred to as field 2 while the off-target field is field 1
-	start_dither = 6 # field 2 dithers run from d6 to d10
 
 	# List of files to use
 	files = []
 
 	for epoch in range(1,num_epochs+1):
-		for dither in range(6,11): # need dithers 6 - 10 as this is the on-target field
+		for dither in range(start_dither,start_dither+5): 
 
 			# Get epoch in correct format
 			if epoch < 10:
@@ -161,9 +166,9 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 
 	# Input epoch 1 first dither of field as master input file
 	daomatch.expect("Master input file:")
-	daomatch.sendline(files[0]) # this is epoch 1 dither 1 file
+	daomatch.sendline(files[0]) 
 	daomatch.expect("Output file name")
-	daomatch.sendline(star_name + '_' + wavelength + '_f2.mch')	
+	daomatch.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')	
 
 	# Give it the rest of the images
 	for j in range(1,num_images):
@@ -181,7 +186,7 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 	daomaster.logfile = fout
 
 	daomaster.expect("File with list of input files:")
-	daomaster.sendline(star_name + '_' + wavelength + '_f2.mch')
+	daomaster.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')
 	daomaster.expect("Minimum number, minimum fraction, enough frames:")
 	daomaster.sendline("1, 0.5, " + str(num_images)) # play around with these values
 	daomaster.expect("Maximum sigma:")
@@ -212,7 +217,7 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("y")
 	daomaster.expect("Output file name")
-	daomaster.sendline(star_name + '_' + wavelength + '_f2.mch') # these are more refined transformations
+	daomaster.sendline(star_name + '_' + wavelength + '_f' + field + '.mch') # these are more refined transformations
 	daomaster.expect("New output file name")
 	daomaster.sendline("")
 	daomaster.expect("A file with the transfer table?")
@@ -229,7 +234,7 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 	montage2.logfile = fout
 
 	montage2.expect("File with transformations:")
-	montage2.sendline(star_name + '_' + wavelength + '_f2.mch')
+	montage2.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')
 	montage2.expect("Image-name suffix:")
 	montage2.sendline("")
 	montage2.expect("Minimum number of frames, percentile:")
@@ -243,7 +248,7 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 	montage2.expect("Determine sky from overlap region?")
 	montage2.sendline("y")
 	montage2.expect("Name for output image")
-	montage2.sendline(star_name + '_' + wavelength + '_f2.fits')
+	montage2.sendline(star_name + '_' + wavelength + '_f' + field + '.fits')
 	montage2.expect("Good bye")
 	montage2.close(force=True)	
 
@@ -559,13 +564,13 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 	################################################################################################
 
 	# Change .ap file names in .mch file to .als
-	f = open(star_name +'_' + wavelength + '_f'+field+'_full.mch', 'r')
+	f = open(star_name +'_' + wavelength + '_f' + field + '_full.mch', 'r')
 	filedata = f.read()
 	f.close()
 
 	newdata = filedata.replace(".ap",".als")
 
-	f = open(star_name +'_' + wavelength + '_f'+field+'_full.mch','w')
+	f = open(star_name +'_' + wavelength + '_f' + field + '_full.mch','w')
 	f.write(newdata)
 	f.close()	
 
@@ -590,9 +595,14 @@ def master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_e
 # Master image off target
 def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs):
 
-	num_images = 5 # for off-target field, medianed images are made for each epoch
-	field = '1'
-	start_dither = 1 # for off-target fields, dithers run from 1 - 5
+	num_images = 5 # for off-target field, medianed images are made for each epoch rather than a combined one across all epochs
+
+	if channel == '1':
+		field = '1' # the off-target images are the first 5 dithers d1-5
+		start_dither = 1
+	else:
+		field = '2' # the on-target images are the first 5 dithers d6-10
+		start_dither = 6
 
 	# Path to where all data is kept
 	home = '/home/ac833/Data/'	
@@ -629,7 +639,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daomatch.expect("Master input file:")
 	daomatch.sendline(star_name + '_' + wavelength + '_e' + epoch_number +'_d' + str(start_dither) + '_cbcd_dn.ap') # Give it the first BCD phot file
 	daomatch.expect("Output file name")
-	daomatch.sendline(star_name + '_' + wavelength +'_f1.mch')
+	daomatch.sendline(star_name + '_' + wavelength +'_f' + field + '.mch')
 	daomatch.expect("Next input file:")
 	daomatch.sendline(star_name + '_' + wavelength + '_e' + epoch_number +'_d' + str(start_dither+1) + '_cbcd_dn.ap/') # Give it the second BCD phot file
 	daomatch.expect("Next input file")
@@ -649,7 +659,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daomaster.logfile = fout
 
 	daomaster.expect("File with list of input files:")
-	daomaster.sendline(star_name + '_' + wavelength + '_f1.mch')
+	daomaster.sendline(star_name + '_' + wavelength + '_f' + field + '.mch')
 	daomaster.expect("Minimum number, minimum fraction, enough frames:")
 	daomaster.sendline("1, 0.5, 5") 
 	daomaster.expect("Maximum sigma:")
@@ -680,7 +690,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daomaster.expect("A file with the new transformations?")
 	daomaster.sendline("y")
 	daomaster.expect("Output file name")
-	daomaster.sendline(star_name + '_' + wavelength +'_f1.mch')
+	daomaster.sendline(star_name + '_' + wavelength +'_f' + field + '.mch')
 	daomaster.expect("New output file name")
 	daomaster.sendline("")
 	daomaster.expect("A file with the transfer table?")
@@ -697,7 +707,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	montage2.logfile = fout
 
 	montage2.expect("File with transformations:")
-	montage2.sendline(star_name + '_' + wavelength +'_f1.mch')
+	montage2.sendline(star_name + '_' + wavelength +'_f' + field + '.mch')
 	montage2.expect("Image-name suffix:")
 	montage2.sendline("")
 	montage2.expect("Minimum number of frames, percentile:")
@@ -711,7 +721,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	montage2.expect("Determine sky from overlap region?")
 	montage2.sendline("y")
 	montage2.expect("Name for output image")
-	montage2.sendline(star_name + '_' + wavelength +'_f1.fits')
+	montage2.sendline(star_name + '_' + wavelength +'_f' + field + '.fits')
 
 
 	################################################################################################
@@ -742,7 +752,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 
 	# Attach medianed image
 	daophot.expect("Command:")
-	daophot.sendline("at " + star_name + '_' + wavelength + '_f1.fits')
+	daophot.sendline("at " + star_name + '_' + wavelength + '_f' + field + '.fits')
 	daophot.expect("Command:")
 	daophot.sendline("opt")
 	daophot.expect("File with parameters")
@@ -768,9 +778,9 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daophot.expect("PHO>")
 	daophot.sendline("")
 	daophot.expect("Input position file")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.coo')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.coo')
 	daophot.expect("Output file")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.ap')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
 
 
 	################################################################################################
@@ -782,18 +792,18 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daophot.expect("Command:")
 	daophot.sendline("pi")
 	daophot.expect("Input file name")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.ap')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
 	daophot.expect("Desired number of stars, faintest magnitude:")
 	daophot.sendline("20,99")
 	daophot.expect("Output file name")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.lst') 
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.lst') 
 	daophot.expect("Command:")
 	daophot.sendline("ex")
 	daophot.close(force=True)
 
 	# Run these candidate stars through tests to remove bad stars
 
-	hdulist = fits.open(star_name + '_' + wavelength + '_f1.fits')
+	hdulist = fits.open(star_name + '_' + wavelength + '_f' + field + '.fits')
 
 	# Access the primary header-data unit (HDU)
 	hdu = hdulist[0]
@@ -811,7 +821,7 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	y_lo = centre[1] - (9*centre[1])/10
 	y_up = centre[1] + (9*centre[1])/10
 
-	psf_stars = pd.read_csv(star_name + '_' + wavelength + '_f1.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+	psf_stars = pd.read_csv(star_name + '_' + wavelength + '_f' + field + '.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
 
 	# Carry out all the tests on each star in the df
 	for index, row in psf_stars.iterrows():
@@ -849,12 +859,12 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 		# Write out final list of stars to the lst file in the correct format
 
 		# Get header of lst file
-		f = open(star_name + '_' + wavelength + '_f1.lst', 'r')
+		f = open(star_name + '_' + wavelength + '_f' + field + '.lst', 'r')
 		header = f.read().splitlines()[0:3]
 		f.close()
 
 		# Now overwrite this file
-		f = open(star_name + '_' + wavelength + '_f1.lst', 'w')
+		f = open(star_name + '_' + wavelength + '_f' + field + '.lst', 'w')
 		f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
 
 		# Send stars to lst file
@@ -866,15 +876,15 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daophot = pexpect.spawn('daophot')
 
 	daophot.expect("Command:")
-	daophot.sendline("at " + star_name + '_' + wavelength + '_f1.fits')
+	daophot.sendline("at " + star_name + '_' + wavelength + '_f' + field + '.fits')
 	daophot.expect("Command:")
 	daophot.sendline("psf")
 	daophot.expect("File with aperture results")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.ap')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
 	daophot.expect("File with PSF stars")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.lst')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.lst')
 	daophot.expect("File for the PSF")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.psf')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.psf')
 	daophot.expect("Command:")
 	daophot.sendline("ex")
 	daophot.close(force=True)
@@ -888,15 +898,15 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	allstar.expect("OPT>")
 	allstar.sendline("")
 	allstar.expect("Input image name:")
-	allstar.sendline(star_name + '_' + wavelength + '_f1.fits')
+	allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.fits')
 	allstar.expect("File with the PSF")
-	allstar.sendline(star_name + '_' + wavelength + '_f1.psf')
+	allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.psf')
 	allstar.expect("Input file")
-	allstar.sendline(star_name + '_' + wavelength + '_f1.ap')
+	allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.ap')
 	allstar.expect("File for results")
-	allstar.sendline(star_name + '_' + wavelength + '_f1.als')
+	allstar.sendline(star_name + '_' + wavelength + '_f' + field + '.als')
 	allstar.expect("Name for subtracted image")
-	allstar.sendline(star_name + '_' + wavelength + '_f1_dns.fits')
+	allstar.sendline(star_name + '_' + wavelength + '_f' + field + '_dns.fits')
 	allstar.expect("Good bye")
 	allstar.close(force=True)	
 
@@ -909,11 +919,11 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	daophot.expect("Command:")
 	daophot.sendline("off") # offsets to put x and y back in
 	daophot.expect("Input file name:")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.als')
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.als')
 	daophot.expect("Additive offsets ID, DX, DY, DMAG:")
 	daophot.sendline("0," + offsets[0] + "," + offsets[1] + ",0")
 	daophot.expect("Output file name")
-	daophot.sendline(star_name + '_' + wavelength + '_f1.mag') # this is the final file for star positions that we want 
+	daophot.sendline(star_name + '_' + wavelength + '_f' + field + '.mag') # this is the final file for star positions that we want 
 	daophot.expect("Command:")
 	daophot.sendline("ex")
 	daophot.close(force=True)
@@ -923,21 +933,21 @@ def master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_
 	################################################################################################	
 
 	# Change .ap file names in .mch file to .als ready for next script
-	f = open(star_name +'_' + wavelength + '_f1.mch', 'r')
+	f = open(star_name +'_' + wavelength + '_f' + field + '.mch', 'r')
 	filedata = f.read()
 	f.close()
 
 	newdata = filedata.replace(".ap",".als")
 
-	f = open(star_name +'_' + wavelength + '_f1.mch','w')
+	f = open(star_name +'_' + wavelength + '_f' + field + '.mch','w')
 	f.write(newdata)
 	f.close()	
 
 	# Rename files we want for the next scripts to be consistent with the on-target version of this code
-	os.rename(star_name + '_' + wavelength + '_f1.fits', star_name + '_' + wavelength + '_f1_master.fits')
-	os.rename(star_name + '_' + wavelength + '_f1.mch', star_name + '_' + wavelength + '_f1_master.mch')
-	os.rename(star_name + '_' + wavelength + '_f1.mag', star_name + '_' + wavelength + '_f1_master.mag')
-	os.rename(star_name + '_' + wavelength + '_f1.psf', star_name + '_' + wavelength + '_f1_master.psf')
+	os.rename(star_name + '_' + wavelength + '_f' + field + '.fits', star_name + '_' + wavelength + '_f' + field + '_master.fits')
+	os.rename(star_name + '_' + wavelength + '_f' + field + '.mch', star_name + '_' + wavelength + '_f' + field + '_master.mch')
+	os.rename(star_name + '_' + wavelength + '_f' + field + '.mag', star_name + '_' + wavelength + '_f' + field + '_master.mag')
+	os.rename(star_name + '_' + wavelength + '_f' + field + '.psf', star_name + '_' + wavelength + '_f' + field + '_master.psf')
 
 	return(0)
 
@@ -2005,3 +2015,1092 @@ def gloess_single_band(star_name, galaxy, channel, wavelength):
 	f.close()
 
 	return(0)
+
+
+######################################################################################################
+######################################################################################################
+
+#										ADDITIONAL STUFF
+
+######################################################################################################
+######################################################################################################
+
+# Fornat the calibrated magnitude files
+def format_cal_files(star_name, galaxy, channel, wavelength, epoch_number, field):
+
+	if field == '1':
+		start_dither = 1
+	else: start_dither = 6
+
+	################################################################################################
+	# 								FORMAT .ALF_CAL FILES 
+	################################################################################################
+
+	# This step takes the calibrated PSF mag files (.alf_cal) and adds the header to the top of the file
+	# Output are .alf_all files
+	# This step is required so that the files can be run through DAOMATCH/DAOMASTER
+
+	# Format all 5 dithers for this star, epoch and field
+	for i in range(start_dither, start_dither+5):
+
+		# Get filenames
+		alf = star_name + '_' + wavelength + '_e' + epoch_number + '_d' + str(i) + '_cbcd_dn.alf' # has the header
+		alf_apc = star_name + '_' + wavelength + '_e' + epoch_number + '_d' + str(i) + '_cbcd_dn.alf_cal' # has the calibrated magnitudes
+
+		f = open(alf)
+
+		# Write the 3 line header to a new file
+		new_filename = star_name + '_' + wavelength + '_e' + epoch_number + '_d' + str(i) + '_cbcd_dn.alf_all'
+		header = f.read().splitlines()[0:3]
+		g = open(new_filename, 'w')
+		g.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
+
+		# Open alf and alf_apc
+		df = pd.read_csv(alf, delim_whitespace=True, header=None, skiprows=3, names=['ID', 'X', 'Y', 'Uncorr_Mag', 'Error', 'Sky', 'Iters', 'Chi', 'Sharp'])
+		df2 = pd.read_csv(alf_apc, skiprows=1, delim_whitespace=True, header=None, names=['ID_nn', 'X_nn', 'Y_nn', 'mag', 'error'])
+
+		# Concat the two df's and drop unnecessary columns
+		data = pd.concat((df,df2), axis=1)
+		data.drop(['Uncorr_Mag', 'ID_nn','X_nn', 'Y_nn', 'error'], axis=1, inplace=True)
+		data = data[['ID', 'X', 'Y', 'mag', 'Error', 'Sky', 'Iters', 'Chi', 'Sharp']]
+
+		g.close()
+		f.close()
+
+		# Append to the new file with the header at the top
+		data.to_csv(new_filename, mode='a', header=None, sep=' ', index=False)	
+
+	return(0)
+
+# Match all on target aperture files 
+def match_all_frames(star_name, galaxy, num_epochs):
+
+	num_images = 5
+
+	#####################################################################################################
+	# 									CREATE TEMP FOLDER 
+	#####################################################################################################
+
+	# Create temporary folder to work in
+	temp = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/temp/'
+
+	# Delete temp folder if it already exists
+	if (os.path.isdir(temp)):
+		shutil.rmtree(temp)
+
+	# Make temp folder
+	os.mkdir(temp)	
+
+	#####################################################################################################
+	# 								CREATE LIST OF FILES TO USE  
+	#####################################################################################################
+
+	# List of files to use
+	files = []
+
+	# The on target frames for [3.6] are dithers 6 - 10
+	for epoch in range(1,num_epochs+1):
+
+		for dither in range(6,11): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+
+	# The on target frames for [4.5] are dithers 1 - 5
+	for epoch in range(1,num_epochs+1):
+		
+		for dither in range(1,6): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)
+
+	#####################################################################################################
+	# 								COPY FILES TO TEMP FOLDER  
+	#####################################################################################################
+
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		for channel in [1,2]:
+
+			if channel == 1:
+				wavelength = '3p6um'
+				start_dither = 6
+			else: 
+				wavelength = '4p5um'
+				start_dither = 1
+
+			cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+str(channel)+'/e'+epoch+'/'
+
+			for dither in range(start_dither,start_dither+5):
+
+				dither = str(dither)
+
+				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.ap')
+				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.alf_all', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.alf_all') 
+				shutil.copyfile(cwd + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_' + wavelength + '_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Change to temp folder 
+	os.chdir(temp)
+
+	################################################################################################
+	# 							MAKE FILE OF COORDINATE TRANSFORMATIONS
+	################################################################################################
+
+	# Use DAOMATCH to get initial transformations
+	daomatch = pexpect.spawn('daomatch')
+
+	fout = file('log.txt','w')
+	daomatch.logfile = fout
+
+	# Input epoch 1 first dither of field as master input file
+	daomatch.expect("Master input file:")
+	daomatch.sendline(files[0]) # this is epoch 1 dither 1 file
+	daomatch.expect("Output file name")
+	daomatch.sendline(star_name + '_on_target.mch')	
+
+	# Give it the rest of the images
+	for j in range(1,len(files)):
+
+		daomatch.expect("Next input file")
+		daomatch.sendline(files[j]+'/')
+
+	daomatch.expect("Next input file")
+	daomatch.sendline("") # exit
+
+
+	################################################################################################
+	# 						REPLACE .AP WITH .ALF_ALL IN MCH FILE
+	################################################################################################
+
+	contents = ""
+	with open(star_name + '_on_target.mch') as f:
+		for line in f.readlines():
+			contents += line
+
+	newdata = contents.replace(".ap",".alf_all")
+
+	f = open(star_name + '_on_target.mch','w')
+	f.write(newdata)
+	f.close()	
+		
+
+	################################################################################################
+	# 						DAOMASTER TO MAKE GIANT FILE OF MAGNITUDES
+	################################################################################################
+
+	daomaster = pexpect.spawn('daomaster')
+
+	fout = file('daomaster_log.txt','w')
+	daomaster.logfile = fout
+
+	daomaster.expect("File with list of input files:")
+	daomaster.sendline(star_name + '_on_target.mch')
+	daomaster.expect("Minimum number, minimum fraction, enough frames:")
+	daomaster.sendline("1, 0.5, " + str(num_images*2)) # play around with these values
+	daomaster.expect("Maximum sigma:")
+	daomaster.sendline("99") 
+	daomaster.expect("Your choice:")
+	daomaster.sendline("6") # solve for 6 degrees of freedom
+	daomaster.expect("Critical match-up radius:")
+	daomaster.sendline("7") 
+
+	for j in range(1,len(files)):
+		daomaster.sendline("")
+
+	# Reduce the match up radius 
+	for match_up in range(7,-1,-1):
+		daomaster.expect("New match-up radius")
+		daomaster.sendline(str(match_up))	
+
+	daomaster.expect("Assign new star IDs?")
+	daomaster.sendline("y") # assign new ids so all frames have same ids
+	daomaster.expect("A file with mean magnitudes and scatter?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with corrected magnitudes and errors?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with raw magnitudes and errors?")
+	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline(star_name + '_on_target.mag')
+	daomaster.expect("A file with the new transformations?")
+	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline(star_name + '_on_target.mch') # these are more refined transformations
+	daomaster.expect("New output file name")
+	daomaster.sendline("")
+	daomaster.expect("A file with the transfer table?")
+	daomaster.sendline("e") # exits rest of options
+
+	shutil.copy(star_name + '_on_target.mag', '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/' + star_name + '_on_target.mag')
+
+	# Move up one folder to star folder
+	os.chdir(os.path.expanduser('../'))
+	shutil.rmtree('temp')
+
+# Average magnitudes in giant magnitudes file
+def average_mags(star_name, galaxy, num_epochs):
+
+	os.chdir('/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/')
+
+	mag_file = star_name + '_on_target.mag'
+
+	df = pd.read_csv(mag_file, skiprows=3, delim_whitespace=True, header=None)
+
+	##########################################################################
+	# 					SORT DATAFRAME
+	##########################################################################
+
+	# Each star has 40 rows of data
+
+	df_new1 = df[0::41]
+	df_new1.reset_index(drop=True, inplace=True)
+
+	df_new2 = df[1::41]
+	df_new2.reset_index(drop=True, inplace=True)
+
+	df_new3 = df[2::41]
+	df_new3.reset_index(drop=True, inplace=True)
+
+	df_new4 = df[3::41]
+	df_new4.reset_index(drop=True, inplace=True)
+
+	df_new5 = df[4::41]
+	df_new5.reset_index(drop=True, inplace=True)
+
+	df_new6 = df[5::41]
+	df_new6.reset_index(drop=True, inplace=True)
+
+	df_new7 = df[6::41]
+	df_new7.reset_index(drop=True, inplace=True)
+
+	df_new8 = df[7::41]
+	df_new8.reset_index(drop=True, inplace=True)
+
+	df_new9 = df[8::41]
+	df_new9.reset_index(drop=True, inplace=True)
+
+	df_new10 = df[9::41]
+	df_new10.reset_index(drop=True, inplace=True)
+
+	df_new11 = df[10::41]
+	df_new11.reset_index(drop=True, inplace=True)
+
+	df_new12 = df[11::41]
+	df_new12.reset_index(drop=True, inplace=True)
+
+	df_new13 = df[12::41]
+	df_new13.reset_index(drop=True, inplace=True)
+
+	df_new14 = df[13::41]
+	df_new14.reset_index(drop=True, inplace=True)
+
+	df_new15 = df[14::41]
+	df_new15.reset_index(drop=True, inplace=True)
+
+	df_new16 = df[15::41]
+	df_new16.reset_index(drop=True, inplace=True)
+
+	df_new17 = df[16::41]
+	df_new17.reset_index(drop=True, inplace=True)
+
+	df_new18 = df[17::41]
+	df_new18.reset_index(drop=True, inplace=True)
+
+	df_new19 = df[18::41]
+	df_new19.reset_index(drop=True, inplace=True)
+
+	df_new20 = df[19::41]
+	df_new20.reset_index(drop=True, inplace=True)
+
+	df_new21 = df[20::41]
+	df_new21.reset_index(drop=True, inplace=True)
+
+	df_new22 = df[21::41]
+	df_new22.reset_index(drop=True, inplace=True)
+
+	df_new23 = df[22::41]
+	df_new23.reset_index(drop=True, inplace=True)
+
+	df_new24 = df[23::41]
+	df_new24.reset_index(drop=True, inplace=True)
+
+	df_new25 = df[24::41]
+	df_new25.reset_index(drop=True, inplace=True)
+
+	df_new26 = df[25::41]
+	df_new26.reset_index(drop=True, inplace=True)
+
+	df_new27 = df[26::41]
+	df_new27.reset_index(drop=True, inplace=True)
+
+	df_new28 = df[27::41]
+	df_new28.reset_index(drop=True, inplace=True)
+
+	df_new29 = df[28::41]
+	df_new29.reset_index(drop=True, inplace=True)
+
+	df_new30 = df[29::41]
+	df_new30.reset_index(drop=True, inplace=True)
+
+	df_new31 = df[30::41]
+	df_new31.reset_index(drop=True, inplace=True)
+
+	df_new32 = df[31::41]
+	df_new32.reset_index(drop=True, inplace=True)
+
+	df_new33 = df[32::41]
+	df_new33.reset_index(drop=True, inplace=True)
+
+	df_new34 = df[33::41]
+	df_new34.reset_index(drop=True, inplace=True)
+
+	df_new35 = df[34::41]
+	df_new35.reset_index(drop=True, inplace=True)
+
+	df_new36 = df[35::41]
+	df_new36.reset_index(drop=True, inplace=True)
+
+	df_new37 = df[36::41]
+	df_new37.reset_index(drop=True, inplace=True)
+
+	df_new38 = df[37::41]
+	df_new38.reset_index(drop=True, inplace=True)
+
+	df_new39 = df[38::41]
+	df_new39.reset_index(drop=True, inplace=True)
+
+	df_new40 = df[39::41]
+	df_new40.reset_index(drop=True, inplace=True)
+
+	df_new41 = df[40::41]
+	df_new41.reset_index(drop=True, inplace=True)
+
+	dfs = [df_new1, df_new2, df_new3, df_new4, df_new5, df_new6, df_new7, df_new8, df_new9, df_new10,
+	      df_new11, df_new12, df_new13, df_new14, df_new15, df_new16, df_new17, df_new18, df_new19, df_new20,
+	      df_new21, df_new22, df_new23, df_new24, df_new25, df_new26, df_new27, df_new28, df_new29, df_new30,
+	      df_new31, df_new32, df_new33, df_new34, df_new35, df_new36, df_new37, df_new38, df_new39, df_new40, df_new41]
+
+
+	df = pd.concat(dfs, axis=1)
+	df.dropna(axis=1, inplace=True)
+
+	#######################################################################################################
+	#										ADD COLUMN NAMES
+	#######################################################################################################
+
+	column_names = ['ID', 'X', 'Y']
+
+	for i in range(1,25):
+	    
+	    if i < 10:
+	        i = '0' + str(i)
+	    else: i = str(i)
+	        
+	    for j in range(6,11):
+	        column_names.append('3p6_e' + i + '_d' + str(j) + '_mag')
+	        column_names.append('3p6_e' + i + '_d' + str(j) + '_err')
+
+	for i in range(1,25):
+	    
+	    if i < 10:
+	        i = '0' + str(i)
+	    else: i = str(i)
+	        
+	    for j in range(1,6):
+	        column_names.append('4p5_e' + i + '_d' + str(j) + '_mag')
+	        column_names.append('4p5_e' + i + '_d' + str(j) + '_err')      
+
+	column_names.append('Del')
+	column_names.append('Del2')
+
+	df.columns = column_names
+	df.drop(['Del','Del2'], axis=1, inplace=True)
+
+	#######################################################################################################
+	#								AVERAGE MAGNITUDES AND ERRORS
+	#######################################################################################################	
+
+	# Create empty average mag and average error columns for each wavelength and epoch.
+	# Total new cols = 24 epochs x 2 wavelengths x 2 cols = 96
+	for epoch in range(1,num_epochs+1):
+
+	    if epoch < 10:
+	        epoch_string = 'e0' + str(epoch)
+	    else: epoch_string = 'e' + str(epoch)
+	    
+	    df['3p6_' + epoch_string + '_ave_mag'] = np.nan
+	    df['3p6_' + epoch_string + '_ave_err'] = np.nan
+	    df['4p5_' + epoch_string + '_ave_mag'] = np.nan
+	    df['4p5_' + epoch_string + '_ave_err'] = np.nan
+
+	# Compute intensity-averaged magnitudes for [3.6] and [4.5] at each epoch and for each star
+	# So every 10 (5 mags, 5 errs) columns need to be converted to flux and averaged
+	# Ignore cols ID, X and Y when averaging
+
+	for channel in [1,2]:
+	    
+	    if channel == 1:
+	        wavelength = '3p6'
+	        start_dither = 6
+	        F0 = 280.9
+	    else: 
+	        wavelength = '4p5'
+	        start_dither = 1
+	        F0 = 179.7
+	    
+	    for epoch in range(1,25): # num_epochs + 1 in general
+	        
+	        if epoch < 10:
+	            epoch_string = 'e0' + str(epoch)
+	        else: epoch_string = 'e' + str(epoch)
+	        
+	        # Get list of columns to average over
+	        
+	        list_of_mags = []
+	        list_of_errs = []
+	        
+	        for dither in range(start_dither, start_dither+5):
+	            
+	            list_of_mags.append(wavelength + '_' + epoch_string + '_d' + str(dither) + '_mag')
+	            list_of_errs.append(wavelength + '_' + epoch_string + '_d' + str(dither) + '_err')
+	    
+	        
+	        # Now convert each magnitude to a flux and average over        
+	        for index, row in df.iterrows():
+	            
+	            fluxes = []
+	            errors = []
+	            
+	            for col in list_of_mags:
+	                
+	                if df[col][index] != 99.9999:
+	                    
+	                    # Convert to flux and append to list
+	                    flux =  F0 * (10 ** (-float(df[col][index])/2.5))
+	                    fluxes.append(flux)
+	            
+	            # Calculate average flux
+	            if len(fluxes) != 0:
+	                ave_flux = sum(fluxes)/len(fluxes)
+	            else: ave_flux = 0
+	            
+	            # Convert flux back to magnitude and append to new column
+	            if ave_flux != 0:
+	                ave_mag = -2.5 * log10(ave_flux/F0)
+	            else: ave_mag = 99.9999
+	                
+	            # Write average magnitude for that star at that epoch to new column
+	            new_col = wavelength + '_' + epoch_string + '_ave_mag'
+	            df.ix[index, new_col] = ave_mag
+	            
+	            for col in list_of_errs:
+	                
+	                if df[col][index] != 9.9999:
+	                    
+	                    # Convert error to flux and append to list
+	                    error = F0 * (10 ** (-float(df[col][index])/2.5))
+	                    errors.append(error)
+	           
+	            # Calculate average error in flux
+	            if len(errors) != 0:
+	                ave_err_flux = sum(errors)/len(errors)
+	            else: ave_err_flux = 0
+	            
+	            # Convert flux back to magnitude and append to new column
+	            if ave_err_flux != 0:
+	                ave_err = -2.5 * log10(ave_err_flux/F0)
+	            else: ave_err = 9.9999 
+	            
+	            # Write average magnitude for that star at that epoch to new column
+	            new_col = wavelength + '_' + epoch_string + '_ave_err'
+	            df.ix[index, new_col] = ave_err 
+
+
+	#######################################################################################################
+	#								DELETE STARS WITHOUT ALL EPOCH DATA
+	#######################################################################################################	
+
+	# Delete stars that don't have data for every epoch
+	# This is fine as they definitely won't be our V* 
+
+	keep_cols = [col for col in df.columns if 'ave_mag' in col or 'ave_err' in col or 'X' in col or 'Y' in col or 'ID' in col]
+
+	df = df[keep_cols]
+	df = df.replace(to_replace=99.9999, value=np.nan)
+	df.dropna(inplace=True)
+
+	df.to_csv(star_name + '_ave_mag.txt', index=False)
+
+	return(df)
+
+# Search for Cepheid
+def find_target(star_name, galaxy, ra, dec, num_epochs, df):
+
+	################################################################################################
+	# 						SET UP OF OUTPUT MAGNITUDE FILE 
+	################################################################################################
+
+	# Open file to write mag and error to 
+	filename = '/home/ac833/Magnitudes/' + galaxy + '/' + star_name + '.txt'
+	f = open(filename, 'w')
+	f.write("Epoch   ID   X   Y   3p6_mag  3p6_err  4p5_mag   4p5_err \n") 
+
+	count = 0 # counts how many epochs star was found in --> should equal num_epochs
+
+
+	################################################################################################
+	# 						GET COORDINATES FROM FITS HEADER  
+	################################################################################################
+
+	# The coordinates in the dataframe that need to be compared to the header are from the 'master'
+	# input file which is always 3p6 e01 d6 
+
+	master_input = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch1/e01/' + star_name + '_3p6um_e01_d6_cbcd_dn.fits'
+
+	# Convert RA and Dec to pixel coordinates using astropy.wcs
+	hdulist = fits.open(master_input)		
+	w = wcs.WCS(hdulist[0].header) # Parse the WCS keywords in the primary HDU
+	world = np.array([[ra, dec]], np.float_) # the world coordinates of the target Cepheid
+	pix = w.wcs_world2pix(world,1) # convert world coordinates to pixel coordinates in an array. For just list of coords want pix[0]
+
+	# Coordinates we want to compare dataframe with with
+	true_x = pix[0][0] 
+	true_y = pix[0][1]
+
+	print "NED coordinates X = " + str(true_x) + " Y = " + str(true_y)
+
+	################################################################################################
+	# 				COMPARE TRUE COORDS WITH DF COORDS TO FIND TARGET V*  
+	################################################################################################
+
+	# Want to search for stars within a (start with) 10 x 10 grid of the true coords 
+
+	# Search box coordinates
+	x_low = true_x - 10
+	x_high = true_x + 10
+	y_low = true_y - 10
+	y_high = true_y + 10
+
+	# Filter df to only keep stars within this box
+	df = df[(df['X']>x_low) & (df['X']<x_high) & (df['Y']>y_low) & (df['Y']<y_high)]
+	df.reset_index(drop=True, inplace=True)
+
+	# Print number of stars in this filter df
+	no_potentials = len(df)
+
+	# If only one star found, assume this is the target cepheid and write their data to file
+	if no_potentials == 1:
+
+		print "Only one star found. Writing this data to file."
+
+		# Write to file
+		for epoch in range(1, num_epochs+1):
+
+		    if epoch < 10:
+		        epoch_string = 'e0' + str(epoch)
+		    else: epoch_string = 'e' + str(epoch)
+
+		    f.write("%d %d %.2f %.2f %.4f %.4f %.4f %.4f \n" % (epoch, df['ID'], df['X'], df['Y'], df['3p6_' + epoch_string + '_ave_mag'], df['3p6_' + epoch_string + '_ave_err'], df['4p5_' + epoch_string + '_ave_mag'], df['4p5_' + epoch_string + '_ave_err']))			
+
+
+	elif no_potentials == 0:
+
+		print "No stars found within the search box."
+
+		fail_file = '/home/ac833/Magnitudes/failed_stars.txt'
+
+		g = open(fail_file, 'a')
+		g.write(star_name + ': No stars found within the search box.')
+		g.close()
+
+	else:
+
+		print "%d stars found in this search box. Now computing variability index." % no_potentials
+
+		print df 
+
+
+
+
+
+		# Do variability index and pick star with largest variability index
+
+		################################################################################################
+		# 						1. COMPUTE WEIGHTED MEAN MAGNITUDES  
+		################################################################################################
+
+		# Add empty columns for the weighted mean magnitudes
+		df['3p6_weighted_mean_mag'] = np.nan
+		df['4p5_weighted_mean_mag'] = np.nan
+
+		# Now want to calculate the weighted mean magnitude per star at each wavelength across all epochs
+
+		for channel in [1,2]:
+		    
+		    if channel == 1:
+		        wavelength = '3p6'
+		        start_dither = 6
+		        F0 = 280.9
+		    else: 
+		        wavelength = '4p5'
+		        start_dither = 1
+		        F0 = 179.7
+		        
+		    for index, row in df.iterrows():
+
+		        numerator = 0
+		        denominator = 0
+
+		        for epoch in range(1,num_epochs+1):
+
+		            if epoch < 10:
+		                epoch_string = 'e0' + str(epoch)
+		            else: epoch_string = 'e' + str(epoch) 
+
+		            mag_col = wavelength + '_' + epoch_string + '_ave_mag'
+		            err_col = wavelength + '_' + epoch_string + '_ave_err'
+		           
+	                numerator += df[mag_col][index]/(df[err_col][index]**2)
+	                denominator += 1/(df[err_col][index]**2)
+		        
+		        # Compute weighted mean mag as in Welch & Stetson (1993)
+	            weighted_mean_mag = numerator/denominator
+	            column = wavelength + '_weighted_mean_mag'
+	            df.ix[index, column] = weighted_mean_mag
+
+
+		################################################################################################
+		# 						2. COMPUTE NORMALISED MAGNITUDE RESIDUALS  
+		################################################################################################
+
+		# Add extra columns in df for normalised magnitude residuals
+		for epoch in range(1,num_epochs+1):
+
+		    if epoch < 10:
+		        epoch_string = 'e0' + str(epoch)
+		    else: epoch_string = 'e' + str(epoch)
+		    
+		    df['3p6_' + epoch_string + '_res'] = np.nan
+		    df['4p5_' + epoch_string + '_res'] = np.nan
+
+		for channel in [1,2]:
+    
+		    if channel == 1:
+		        wavelength = '3p6'
+
+		    else: 
+		        wavelength = '4p5'
+		        
+		    for index, row in df.iterrows():
+
+		        for epoch in range(1,num_epochs+1):
+
+		            if epoch < 10:
+		                epoch_string = 'e0' + str(epoch)
+		            else: epoch_string = 'e' + str(epoch)
+		            
+		            res_col = wavelength + '_' + epoch_string + '_res'
+		            mag_col = wavelength + '_' + epoch_string + '_ave_mag'
+		            weight_col = wavelength + '_weighted_mean_mag'
+		            err_col = wavelength + '_' + epoch_string + '_ave_err'
+		            
+		            epoch_mag = float(df[mag_col][index])
+		            weighted_mag = float(df[weight_col][index])
+		            error = float(df[err_col][index])
+		            
+		            df.ix[index, res_col] = (epoch_mag - weighted_mag)/error 
+
+
+		################################################################################################
+		# 						3. COMPUTE VARIABILITY INDEX, I
+		################################################################################################
+
+		# Add new I column
+		df['I'] = np.nan
+
+		# This factor is the first term in the calculation of I from Welch & Stetson
+		epoch_factor = sqrt(1/(float(num_epochs)*(float(num_epochs-1))))
+
+		for index, row in df.iterrows():
+		    
+		    summation = 0
+
+		    for epoch in range(1,num_epochs+1):
+
+		        if epoch < 10:
+		            epoch_string = 'e0' + str(epoch)
+		        else: epoch_string = 'e' + str(epoch)
+		        
+		        col_3p6 = '3p6_' + epoch_string + '_res'
+		        col_4p5 = '4p5_' + epoch_string + '_res'
+		        
+		        res_3p6 = df[col_3p6][index]
+		        res_4p5 = df[col_4p5][index]
+		        
+		        summation += res_3p6 * res_4p5
+		    
+		    df.ix[index, 'I'] = epoch_factor * summation
+
+		# Index with largest value of I
+		star_index = df['I'].idxmax()
+
+		# Write to file the star at this index
+		for epoch in range(1, num_epochs+1):
+
+		    if epoch < 10:
+		        epoch_string = 'e0' + str(epoch)
+		    else: epoch_string = 'e' + str(epoch)
+
+		    f.write("%d %d %.2f %.2f %.4f %.4f %.4f %.4f \n" % (epoch, df['ID'][star_index], df['X'][star_index], df['Y'][star_index], df['3p6_' + epoch_string + '_ave_mag'][star_index], df['3p6_' + epoch_string + '_ave_err'][star_index], df['4p5_' + epoch_string + '_ave_mag'][star_index], df['4p5_' + epoch_string + '_ave_err'][star_index]))			
+
+	f.close()
+
+	return(0)
+
+# Format GLOESS file 
+def gloess_files(star_name, galaxy, num_epochs, period):
+
+	################################################################################################
+	# 								GET HMJD FOR EACH EPOCH
+	################################################################################################
+
+	hmjd_3p6 = []
+	hmjd_4p5 = []
+
+	for j in range(1,num_epochs+1):
+
+		if j < 10:
+			filename = '/home/ac833/Data/'+str(galaxy)+'/BCD/'+str(star_name)+'/ch1/e0'+str(j)+'/'+str(star_name)+'_3p6um_e0'+str(j)+"_d1_cbcd_dn.fits"
+		else: filename = '/home/ac833/Data/'+str(galaxy)+'/BCD/'+str(star_name)+'/ch1/e'+str(j)+'/'+str(star_name)+'_3p6um_e'+str(j)+"_d1_cbcd_dn.fits"
+
+		image = fits.open(filename)
+		header = image[0].header
+		hmjd_3p6.append(header['HMJD_OBS'])
+
+	for j in range(1,num_epochs+1):
+
+		if j < 10:
+			filename = '/home/ac833/Data/'+str(galaxy)+'/BCD/'+str(star_name)+'/ch2/e0'+str(j)+'/'+str(star_name)+'_4p5um_e0'+str(j)+"_d1_cbcd_dn.fits"
+		else: filename = '/home/ac833/Data/'+str(galaxy)+'/BCD/'+str(star_name)+'/ch2/e'+str(j)+'/'+str(star_name)+'_4p5um_e'+str(j)+"_d1_cbcd_dn.fits"
+
+		image = fits.open(filename)
+		header = image[0].header
+		hmjd_4p5.append(header['HMJD_OBS'])
+
+
+	################################################################################################
+	# 								OPEN MAGNITUDES FILE INTO DF
+	################################################################################################
+
+	df = pd.read_csv('/home/ac833/Magnitudes/' + galaxy + '/' + star_name + '.txt', header=0, delim_whitespace=True)
+
+
+	################################################################################################
+	# 								WRITE OUT TO FILE
+	################################################################################################
+
+	f = open('/home/ac833/GLOESS_files/' + star_name + '_gloess.txt', 'w')
+
+	f.write(str(star_name) + '\n')
+	f.write(str(period) + '\n')
+	f.write(str(1) + '\n') # doesn't matter what goes here as it's not used by GLOESS code
+
+	# If short period then slightly relaxed fitting parameter of 0.25
+	# Longer period Cepheids generally have better light curves so can use a tighter fitting parameter of 0.20
+	if period <= 12:
+		f.write(str(0.25) + ' ' + str(0.25) + '\n') 
+	else: f.write(str(0.2) + ' ' + str(0.2) + '\n')
+
+	# Write out the 3p6 data first
+	for epoch in range(0, num_epochs):
+
+		f.write("%f %f %f 99.9999 9.9999 \n" % (hmjd_3p6[epoch], df['3p6_mag'][epoch], df['3p6_err'][epoch]))
+
+	# Then write out 4p5 data
+	for epoch in range(0, num_epochs):
+
+		f.write("%f 99.9999 9.9999 %f %f \n" % (hmjd_4p5[epoch], df['4p5_mag'][epoch], df['4p5_err'][epoch]))
+
+	f.close()
+
+# Fit multiband GLOESS curve
+def gloess_multiband(star_name, galaxy):
+
+	################################################################################################
+	# 									READ IN DATA
+	################################################################################################
+
+	# This file has all the magnitudes
+	input_filename = '/home/ac833/GLOESS_files/' + star_name + '_gloess.txt'
+
+	dir1 = [] # 3p6 magnitudes
+	dir2 = [] # 4p5 magnitudes
+	deir1 = [] # 3p6 errors
+	deir2 = [] # 4p5 errors
+	dmjd = [] # hmjd of observations
+
+	counter = 0
+
+	## Want to know whether the IRAC data is phased or not. 
+	## If it is phased, must reduce the uncertainty by another factor of sqrt(N)
+	## if phased == 1 then true. if phased == 0, false
+	## The data is phased if Period > 12 days
+
+	for line in open(input_filename):
+
+		data = line.split()
+
+		# Counter always starts equal to 0 so this will always be the first line
+		if counter == 0:
+			# Cephied name	
+			cepname = data[0]
+		if counter == 1:
+			# if counter = 1 then the first element in this line of the input file is the period of the cepheid
+			period = float(data[0])
+			if period > 12:
+				# for Cepheids with periods > 12 days then the observations were taken equally spaced
+				# therefore, error scales with 1/N
+				phased = 1
+			else:
+				# for Cepheids with periods < 12 days they weren't equally spaced
+				# therefore, error scales with 1/sqrt(N)
+				phased = 0
+		if counter == 2:
+			# if counter = 2, the first element in this line of the input file is the number of lines
+			# this part of the code is redundant since don't use num_lines anymore
+			nlines = float(data[0])
+		if counter == 3:
+			# if counter = 3, this line of data contains the x values in all the 12 bands
+			xir1 = float(data[0])
+			xir2 = float(data[1])
+		if counter > 3:
+			# if counter>3, then this line of the input consists of many values that get appended to the lists at the beginning of the code
+			# I think the d in front of du say is just so that when convert to numpy arrays the u isn't already taken
+			dmjd.append(float(data[0])) # hmjd
+			dir1.append(float(data[1])) 
+			deir1.append(float(data[2])) 
+			dir2.append(float(data[3]))
+			deir2.append(float(data[4]))
+
+		# Counter incrememnts so that each line from the input file is read 
+		counter  = counter + 1	
+			
+	## Read in all the data from the file and filled the arrays. Need to convert these to numpy arrays.
+
+	# Number of lines of data as opposed to the Name, period etc
+	number = counter - 4 # Number data lines in the file
+
+	# Convert to numpy arrays
+	ir1 = np.array(dir1)
+	ir2 = np.array(dir2)
+	eir1 = np.array(deir1)
+	eir2 = np.array(deir2)
+	mjd = np.array(dmjd)	
+
+	# Number of observations - doesn't count 99.9999 values
+	nir1 = sum(ir1<50)
+	nir2 = sum(ir2<50)
+
+	################################################################################################
+	# 									PHASE THE DATA
+	################################################################################################
+
+	# Phases don't need to be done individually by band - only depends on P
+	phase = (mjd / period) - np.floor(mjd / period)
+	multiple_phase = np.concatenate((phase,(phase+1.0),(phase+2.0),(phase+3.0),(phase+4.0)))
+
+
+	################################################################################################
+	# 								GET MAX AND MIN VALUES
+	################################################################################################
+
+	# These steps are more necessary when plotting multiple bands
+
+	maxvals = []
+	minvals = []
+
+	if nir1 > 0:
+		maxvals.append(np.amax(ir1[ir1<50]))
+		minvals.append(np.amin(ir1[ir1<50]))
+
+	if nir2 > 0:
+		maxvals.append(np.amax(ir2[ir2<50]))
+		minvals.append(np.amin(ir2[ir2<50]))
+
+	# Convert the max and min values lists to np arrays
+	maxvals = np.array(maxvals)
+	minvals = np.array(minvals)
+
+	# Max and min across all bands are the largest values of the max and min arrays
+	max = np.max(maxvals)
+	min = np.min(minvals)
+
+	# Set max and min limits
+	maxlim = max + 0.5
+	minlim = min - 0.5
+
+	#print cepname, ' ---- Period =', period, 'days'
+	#print '------------------------------------------------------'
+
+
+	################################################################################################
+	# 								FIT GLOESS CURVE TO DATA
+	################################################################################################
+
+	# Clear figure
+	plt.clf()
+	plt.figure(figsize=[5,7])
+
+	# GridSpec specifies the geometry of the grid that a subplot will be placed. 
+	# The number of rows and number of columns of the grid need to be set.
+	# So here, we have 3 rows and 4 columns
+	gs = gridspec.GridSpec(3, 4)
+	ax2 = plt.subplot(gs[0, :])
+	ax3 = plt.subplot(gs[1, :])
+	ax4 = plt.subplot(gs[2, :])
+
+	# Values in the [] are xmin,xmax,ymin,ymax
+	#ax1.axis([1,3.5,(maxlim),(minlim)])
+
+	titlestring = cepname + ', P = ' + str(period) + ' days'
+	plt.suptitle(titlestring, fontsize=20)
+
+	#ax1.set_ylabel('Magnitude')
+	#ax1.set_xlabel('Phase $\phi$')
+
+	## Fitting and plotting for each band
+	if nir1 > 0:
+
+		ir11, ir1x, yir1, yeir1, xphaseir1 = gf.fit_one_band(ir1,eir1,phase,nir1,xir1)
+
+		# ax1.plot(ir1x,ir11,'k-')
+	 # 	ax1.plot(xphaseir1,yir1,color='MediumVioletRed',marker='o',ls='None', label='mag')
+
+		aveir1, adevir1, sdevir1, varir1, skewir1, kurtosisir1, ampir1 = gf.moment(ir11[200:300],100)
+
+		if phased == 1:
+			factor = sqrt(nir1)
+		if phased == 0:
+			factor = 1 
+		if nir1 > 1:
+			print  '<mag> = {0:.3f}    std dev = {1:.3f}     amplitude = {2:.3f}' .format(aveir1, sdevir1/factor, ampir1)
+		if nir1 == 1:
+			print  'mag = {0:.3f} --- single point'.format(aveir1)
+
+
+	if nir2 > 0:
+
+		ir21, ir2x, yir2, yeir2, xphaseir2 = gf.fit_one_band(ir2,eir2,phase,nir2,xir2)
+
+		# ax1.plot(ir2x,ir21,'k-')
+	 # 	ax1.plot(xphaseir2,yir2,color='DeepPink',marker='o',ls='None', label='mag')
+
+		aveir2, adevir2, sdevir2, varir2, skewir2, kurtosisir2, ampir2 = gf.moment(ir21[200:300],100)
+
+		if phased == 1:
+			factor = sqrt(nir2)
+		if phased == 0:
+			factor = 1 
+		if nir2 > 1:
+			print  '<mag> = {0:.3f}    std dev = {1:.3f}     amplitude = {2:.3f}' .format(aveir2, sdevir2/factor, ampir2)
+		if nir2 == 1:
+			print  'mag = {0:.3f} --- single point'.format(aveir1)
+
+	#handles, labels = ax1.get_legend_handles_labels() 
+	#ax1.legend(handles[::-1],labels[::-1],loc=4, numpoints=1,prop={'size':10})
+
+	### Define the colour curve
+	colour_curve = ir11 - ir21
+	## Define the colour points
+	ch1_points = yir1[yir1<99]
+	ch2_points = yir2[yir2<99]
+
+	colour_points = ch1_points - ch2_points
+	colour_phases = xphaseir1[yir1<99]
+
+	colour_points = np.concatenate((colour_points,colour_points,colour_points,colour_points,colour_points))
+	colour_phases = np.concatenate((colour_phases,(colour_phases+1.),(colour_phases+2.),(colour_phases+3.),(colour_phases+4.)))
+
+
+	avecol, adevcol, sdevcol, varcol, skewcol, kurtosiscol, ampcol = gf.moment(colour_curve[200:300],100)
+
+	#print >> avsout, '<[3.6] - [4.5]> = {0:.3f}    std dev = {1:.3f}     amplitude = {2:.3f}' .format(avecol, sdevcol/factor, ampcol)
+	print  '<[3.6] - [4.5]> = {0:.3f}    std dev = {1:.3f}     amplitude = {2:.3f}' .format(avecol, sdevcol/factor, ampcol)
+
+	ax2.axis([1,3.5,(np.average(ir11[200:300]) + 0.4),(np.average(ir11[200:300]) - 0.4)])
+	ax2.yaxis.tick_right()
+	ax2.plot(ir1x,ir11,'k-')
+	ax2.plot(xphaseir1,yir1,color='MediumVioletRed',marker='o',ls='None', alpha=0.6, label='$[3.6]$')
+	ax2.annotate('$[3.6]$', xy=(0.04, 0.8375), xycoords='axes fraction', fontsize=16)
+
+	ax3.axis([1,3.5,(np.average(ir21[200:300]) + 0.4),(np.average(ir21[200:300]) - 0.4)])
+	ax3.yaxis.tick_right()
+	ax3.plot(ir2x,ir21,'k-')
+	ax3.plot(xphaseir2,yir2,color='DeepPink',marker='o',ls='None', alpha=0.6, label='$[3.6]$')
+	ax3.annotate('$[4.5]$', xy=(0.04, 0.8375), xycoords='axes fraction',fontsize=16)
+
+	myaxis2 = [1,3.5, 0.4,-0.4]
+	ax4.axis(myaxis2)
+	ax4.yaxis.tick_right()
+	ax4.yaxis.set_major_locator(plt.FixedLocator([0.2, 0.1, 0, -0.1, -0.2]))
+	ax4.plot(ir1x,colour_curve,'k-')
+	ax4.plot(colour_phases,colour_points,color='Black',marker='o',ls='None', alpha=0.3, label='$[3.6]-[4.5]$')
+
+	ax4.set_xlabel('Phase $\phi$')
+	ax4.annotate('$[3.6] - [4.5]$', xy=(0.04, 0.8375), xycoords='axes fraction',fontsize=16)
+
+	ax4.hlines(0,1,3.5,'k','dashdot')
+
+	plt.setp(ax2.get_xticklabels(),visible=False)
+	plt.setp(ax3.get_xticklabels(),visible=False)
+
+	plotname = cepname+'.eps'
+	plt.savefig(plotname, transparent='True')
+
+	#avsout.close()
+
+	# Save light curve
+	lc_name = '/home/ac833/Light_Curves/' + galaxy +'/' + star_name + '.png'
+	plt.savefig(lc_name, dpi=100)
+	#plt.savefig(lc_name, transparent=True)
+
+	# Output all relevant information to a file
+	# Galaxy, star, channel, period, mean mag, std_dev, amplitude
+
+	master_mags_file = '/home/ac833/master_stars.txt'
+
+	f = open(master_mags_file, 'a')
+
+	if phased == 1:
+		std_error_ir1 = sdevir1/(factor ** 2) # error scales with 1/N
+		std_error_ir2 = sdevir2/(factor ** 2)
+	else:
+		std_error_ir1 = sdevir1/factor # error scales with 1/sqrt(N)
+		std_error_ir2 = sdevir2/factor # error scales with 1/sqrt(N)
+
+
+	f.write("%s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f \n" % (galaxy, star_name, period, aveir1, std_error_ir1, ampir1, aveir2, std_error_ir2, ampir2, avecol, sdevcol/factor, ampcol))
+
+	f.close()
