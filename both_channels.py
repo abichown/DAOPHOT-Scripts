@@ -34,7 +34,8 @@ from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['Garamond']
 
-from functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag, format_gloess, gloess_single_band, format_cal_files, match_all_frames, average_mags, find_target, gloess_files, gloess_multiband
+from functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag, format_gloess, gloess_single_band
+from functions import format_cal_files, match_all_frames, average_mags, find_target, gloess_files, gloess_multiband, master_off_target_no_psf
 
 start = time.time()
 
@@ -81,214 +82,215 @@ for i in range(0, len(df)):
 			wavelength = '4p5um'
 		else: wavelength = 'channel not defined'
 
-	# 	#####################################################################################################
-	# 	# 								REMOVE FILES FROM PREVIOUS RUNS 
-	# 	#####################################################################################################
+		#####################################################################################################
+		# 								REMOVE FILES FROM PREVIOUS RUNS 
+		#####################################################################################################
 
-	# 	# Basically, remove anything that does not end in _cbcd_dn.fits or _cbcd.fits
-	# 	# But double check this
+		# Basically, remove anything that does not end in _cbcd_dn.fits or _cbcd.fits
+		# But double check this
 
-	#     #####################################################################################################
-	#     # 									PERFORM PHOTOMETRY
-	#     #####################################################################################################
+	    #####################################################################################################
+	    # 									PERFORM PHOTOMETRY
+	    #####################################################################################################
 
-	# 	print "Aperture photometry"
+		print "Aperture photometry"
 
-	#     # Iterate over every epoch for the current star
-	# 	for epoch in range(1, num_epochs+1):
+	    # Iterate over every epoch for the current star
+		for epoch in range(1, num_epochs+1):
 
-	#     	# Convert epoch into string version
-	# 		if epoch < 10:
-	# 			epoch_number = '0' + str(epoch)
-	# 		else: epoch_number = str(epoch)
+	    	# Convert epoch into string version
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-	# 		# Change directory to where this epoch is
-	# 		cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
-	# 		os.chdir(cwd)  
+			# Change directory to where this epoch is
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
+			os.chdir(cwd)  
 			
-	# 		# Aperture photometry on all 10 dithers for this epoch
-	# 		aper_phot(star_name, galaxy, channel, wavelength, epoch_number)
+			# Aperture photometry on all 10 dithers for this epoch
+			aper_phot(star_name, galaxy, channel, wavelength, epoch_number)
 
 
-	#     #####################################################################################################
-	#     # 						CREATE MEDIANED IMAGES FOR ON AND OFF TARGET FIELDS
-	#     ##################################################################################################### 
+	    #####################################################################################################
+	    # 						CREATE MEDIANED IMAGES FOR ON AND OFF TARGET FIELDS
+	    ##################################################################################################### 
 
-	# 	# Then need to come out of the epoch folders and just inside the channel folder so that medianed
-	# 	# image can be made and then copied to the epoch folders
-	# 	# Make medianed image, master star list and master PSF model for on-target field i.e. field 2
+		# Then need to come out of the epoch folders and just inside the channel folder so that medianed
+		# image can be made and then copied to the epoch folders
+		# Make medianed image, master star list and master PSF model for on-target field i.e. field 2
 
-	# 	print "On-target medianed image"
+		print "On-target medianed image"
 
-	# 	os.chdir(os.path.expanduser('../')) # move up a level into channel folder
-	# 	master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
+		os.chdir(os.path.expanduser('../')) # move up a level into channel folder
+		master_on_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
 
-	# 	print "Off-target medianed image"
+		print "Off-target medianed image"
 
-	# 	# Then move back into the epoch folders again
-	# 	for epoch in range(1, num_epochs+1):
+		# Then move back into the epoch folders again
+		for epoch in range(1, num_epochs+1):
 
-	# 	    # Convert epoch into string version
-	# 		if epoch < 10:
-	# 			epoch_number = '0' + str(epoch)
-	# 		else: epoch_number = str(epoch)
+		    # Convert epoch into string version
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-	# 		# Change directory to where this epoch is
-	# 		cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
-	# 		os.chdir(cwd) 
+			# Change directory to where this epoch is
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
+			os.chdir(cwd) 
 
-	# 		# Make medianed image, master star list and master PSF model for off-target field 
-	# 		master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
+			# Make medianed image, master star list and master PSF model for off-target field 
+			# master_off_target(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
+			master_off_target_no_psf(star_name, galaxy, channel, wavelength, epoch_number, num_epochs)
 
 
-	#     #####################################################################################################
-	#     # 								PSF PHOTOMETRY USING ALLSTAR
-	#     ##################################################################################################### 
+	    #####################################################################################################
+	    # 								PSF PHOTOMETRY USING ALLSTAR
+	    ##################################################################################################### 
 
-	# 	# PSF photometry on all 10 dithers for this epoch
-	# 	print "PSF photometry"
+		# PSF photometry on all 10 dithers for this epoch
+		print "PSF photometry"
 
-	#     # Iterate over every epoch for the current star
-	# 	for epoch in range(1, num_epochs+1):
+	    # Iterate over every epoch for the current star
+		for epoch in range(1, num_epochs+1):
 
-	#     	# Convert epoch into string version
-	# 		if epoch < 10:
-	# 			epoch_number = '0' + str(epoch)
-	# 		else: epoch_number = str(epoch)
+	    	# Convert epoch into string version
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-	# 		# Change directory to where this epoch is
-	# 		cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
-	# 		os.chdir(cwd)  
+			# Change directory to where this epoch is
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
+			os.chdir(cwd)  
 			
-	# 		# PSF photometry on all 10 dithers for this epoch
-	# 		psf_phot(star_name, galaxy, channel, wavelength, epoch_number)
+			# PSF photometry on all 10 dithers for this epoch
+			psf_phot(star_name, galaxy, channel, wavelength, epoch_number)
 
 
-	#     #####################################################################################################
-	#     # 										ALLFRAME
-	#     ##################################################################################################### 
+	    #####################################################################################################
+	    # 										ALLFRAME
+	    ##################################################################################################### 
 
-	# 	# Run ALLFRAME
-	# 	# Files created are .alf files
-	# 	print "ALLFRAME"
+		# Run ALLFRAME
+		# Files created are .alf files
+		print "ALLFRAME"
 
-	# 	for epoch in range(1, num_epochs+1):
+		for epoch in range(1, num_epochs+1):
 
-	#     	# Convert epoch into string version
-	# 		if epoch < 10:
-	# 			epoch_number = '0' + str(epoch)
-	# 		else: epoch_number = str(epoch)
+	    	# Convert epoch into string version
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-	# 		# Change directory to where this epoch is
-	# 		cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
-	# 		os.chdir(cwd)  
+			# Change directory to where this epoch is
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
+			os.chdir(cwd)  
 
-	# 		# Run ALLFRAME on both fields consisting of 5 dithers each
-	# 		for field in [1,2]:
+			# Run ALLFRAME on both fields consisting of 5 dithers each
+			for field in [1,2]:
 
-	# 			field = str(field)
-	# 			allframe(star_name, galaxy, channel, wavelength, epoch_number, field)
-
-
-	#     #####################################################################################################
-	#     # 							CALIBRATION TO STANDARD IRAC VEGA SYSTEM
-	#     ##################################################################################################### 
+				field = str(field)
+				allframe(star_name, galaxy, channel, wavelength, epoch_number, field)
 
 
-	# 	# Carry out calibration procedure to get magnitudes onto the standard IRAC Vega system of Reach et al. (2005)
-	# 	# Steps:
-	# 	# 1. Aperture correction 
-	# 	# 2. Standard aperture correction
-	# 	# 3. Zero point correction
-	# 	# 4. Location correction
-	# 	# 5. Pixel phase correction 
-	# 	# Files created are .alf_cal files
-
-	# 	print "Calibration to standard system"
+	    #####################################################################################################
+	    # 							CALIBRATION TO STANDARD IRAC VEGA SYSTEM
+	    ##################################################################################################### 
 
 
-	# 	for epoch in range(1, num_epochs+1):
+		# Carry out calibration procedure to get magnitudes onto the standard IRAC Vega system of Reach et al. (2005)
+		# Steps:
+		# 1. Aperture correction 
+		# 2. Standard aperture correction
+		# 3. Zero point correction
+		# 4. Location correction
+		# 5. Pixel phase correction 
+		# Files created are .alf_cal files
 
-	#     	# Convert epoch into string version
-	# 		if epoch < 10:
-	# 			epoch_number = '0' + str(epoch)
-	# 		else: epoch_number = str(epoch)
-
-	# 		# Change directory to where this epoch is
-	# 		cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
-	# 		os.chdir(cwd)  
-
-	# 		# Run ALLFRAME on both fields consisting of 5 dithers each
-	# 		for field in [1,2]:
-
-	# 			field = str(field)
-	# 			calibration_procedure(star_name, galaxy, channel, wavelength, epoch_number, field)
+		print "Calibration to standard system"
 
 
-	#     #####################################################################################################
-	#     # 							FORMAT .ALF_CAL FILES TO .ALF_ALL FILES
-	#     ##################################################################################################### 
+		for epoch in range(1, num_epochs+1):
 
-	# 	# Format the magnitude files so that they are in the correct format for DAOMATCH
-	# 	# Files created are .alf_all
-	# 	print "Formatting .alf_cal files to .alf_all files"
+	    	# Convert epoch into string version
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-	# 	for epoch in range(1, num_epochs+1):
+			# Change directory to where this epoch is
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
+			os.chdir(cwd)  
 
-	#     	# Convert epoch into string version
-	# 		if epoch < 10:
-	# 			epoch_number = '0' + str(epoch)
-	# 		else: epoch_number = str(epoch)
+			# Run ALLFRAME on both fields consisting of 5 dithers each
+			for field in [1,2]:
 
-	# 		# Change directory to where this epoch is
-	# 		cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
-	# 		os.chdir(cwd)  
-
-	# 		# Do on both fields
-	# 		for field in [1,2]:
-
-	# 			field = str(field)
-	# 			format_cal_files(star_name, galaxy, channel, wavelength, epoch_number, field)
+				field = str(field)
+				calibration_procedure(star_name, galaxy, channel, wavelength, epoch_number, field)
 
 
-	# ##################################################################################################
-	# # 									MATCH ALL ON TARGET FRAMES	
-	# ##################################################################################################
+	    #####################################################################################################
+	    # 							FORMAT .ALF_CAL FILES TO .ALF_ALL FILES
+	    ##################################################################################################### 
 
-	# # Want to match all on target aperture magnitude files to create one giant file containing the mags
-	# # for all stars across all dithers, all epochs and both channels
+		# Format the magnitude files so that they are in the correct format for DAOMATCH
+		# Files created are .alf_all
+		print "Formatting .alf_cal files to .alf_all files"
 
-	# print "Making giant file of magnitudes"
-	# match_all_frames(star_name, galaxy, num_epochs)
+		for epoch in range(1, num_epochs+1):
 
-	# #################################################################################################
-	# #									GET AVERAGE MAGNITUDES
-	# #################################################################################################
+	    	# Convert epoch into string version
+			if epoch < 10:
+				epoch_number = '0' + str(epoch)
+			else: epoch_number = str(epoch)
 
-	# # In the giant magnitudes file is now all dithers from all epochs from both channels
-	# # Want to create a new dataframe which only includes the following
-	# # ID, X, Y, ave_mag at each epoch, ave_err at each epoch
+			# Change directory to where this epoch is
+			cwd = '/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch' + channel + '/e' + epoch_number +'/'
+			os.chdir(cwd)  
 
-	# print "Averaging magnitudes"
+			# Do on both fields
+			for field in [1,2]:
 
-	# # Move up one level to star folder
-	# os.chdir(os.path.expanduser('../'))
+				field = str(field)
+				format_cal_files(star_name, galaxy, channel, wavelength, epoch_number, field)
 
-	# # This dataframe has the following columns
-	# # ID X Y 3p6_e01_ave_mag 3p6_e01_ave_err ... 4p5_e24_ave_mag 4p5_e24_ave_err 
-	# # Only stars with ave_mags at ALL epochs are kept
-	# # This dataframe will be used to search for the Cepheid
-	# df = average_mags(star_name, galaxy, num_epochs)
 
-	# ##################################################################################################
-	# # 										FIND CEPHEID
-	# ##################################################################################################
+	##################################################################################################
+	# 									MATCH ALL ON TARGET FRAMES	
+	##################################################################################################
 
-	# # Then look for star by comparing coordinates between pixel and NED
-	# # Also if num epochs is not 24 (for LMC) then calculate variability index
+	# Want to match all on target aperture magnitude files to create one giant file containing the mags
+	# for all stars across all dithers, all epochs and both channels
 
-	# print "Finding Cepheid"
-	# find_target(star_name, galaxy, ra, dec, num_epochs, df)
+	print "Making giant file of magnitudes"
+	match_all_frames(star_name, galaxy, num_epochs)
+
+	#################################################################################################
+	#									GET AVERAGE MAGNITUDES
+	#################################################################################################
+
+	# In the giant magnitudes file is now all dithers from all epochs from both channels
+	# Want to create a new dataframe which only includes the following
+	# ID, X, Y, ave_mag at each epoch, ave_err at each epoch
+
+	print "Averaging magnitudes"
+
+	# Move up one level to star folder
+	os.chdir(os.path.expanduser('../'))
+
+	# This dataframe has the following columns
+	# ID X Y 3p6_e01_ave_mag 3p6_e01_ave_err ... 4p5_e24_ave_mag 4p5_e24_ave_err 
+	# Only stars with ave_mags at ALL epochs are kept
+	# This dataframe will be used to search for the Cepheid
+	df = average_mags(star_name, galaxy, num_epochs)
+
+	##################################################################################################
+	# 										FIND CEPHEID
+	##################################################################################################
+
+	# Then look for star by comparing coordinates between pixel and NED
+	# Also if num epochs is not 24 (for LMC) then calculate variability index
+
+	print "Finding Cepheid"
+	find_target(star_name, galaxy, ra, dec, num_epochs, df)
 
 
 	##################################################################################################
