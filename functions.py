@@ -1215,10 +1215,10 @@ def calibration_procedure(star_name, galaxy, channel, wavelength, epoch_number, 
 		apc = 0
 
 
-	# Save aperture correction value to file
-	apc_file = open('/home/ac833/apc.txt', 'a')
-	apc_file.write("Aperture correction for Star " + str(star_name) + " Wavelength " + str(wavelength) + " Epoch " + str(epoch_number) + " Field " + str(field) + " is " + str(apc) + '\n')
-	apc_file.close()
+	# # Save aperture correction value to file
+	# apc_file = open('/home/ac833/apc.txt', 'a')
+	# apc_file.write("Aperture correction for Star " + str(star_name) + " Wavelength " + str(wavelength) + " Epoch " + str(epoch_number) + " Field " + str(field) + " is " + str(apc) + '\n')
+	# apc_file.close()
 
 
 
@@ -2073,15 +2073,6 @@ def gloess_single_band(star_name, galaxy, channel, wavelength):
 
 	return(0)
 
-
-######################################################################################################
-######################################################################################################
-
-#										ADDITIONAL STUFF
-
-######################################################################################################
-######################################################################################################
-
 # Fornat the calibrated magnitude files
 def format_cal_files(star_name, galaxy, channel, wavelength, epoch_number, field):
 
@@ -2386,6 +2377,8 @@ def match_all_frames(star_name, galaxy, num_epochs):
 	# os.chdir(os.path.expanduser('../'))
 	# shutil.rmtree('temp')
 
+	return(0)
+
 # Average magnitudes in giant magnitudes file
 def average_mags(star_name, galaxy, num_epochs):
 
@@ -2393,175 +2386,61 @@ def average_mags(star_name, galaxy, num_epochs):
 
 	mag_file = star_name + '_on_target.mag'
 
-	df = pd.read_csv(mag_file, skiprows=3, delim_whitespace=True, header=None)
+	all_df = pd.read_csv(mag_file, skiprows=3, delim_whitespace=True, header=None)
 
 	##########################################################################
 	# 					SORT DATAFRAME
 	##########################################################################
 
-	# Each star has 40 rows of data
+	# Number of rows of data each star has depends on number of epochs which in turn depends on galaxy
+	if galaxy == 'LMC':
+		no_rows = 41
+	else: no_rows = 21
 
-	df_new1 = df[0::41]
-	df_new1.reset_index(drop=True, inplace=True)
+	# Master dataframe
+	df = pd.DataFrame()
 
-	df_new2 = df[1::41]
-	df_new2.reset_index(drop=True, inplace=True)
+	# Put data into dataframe
+	for i in range(0, no_rows):
 
-	df_new3 = df[2::41]
-	df_new3.reset_index(drop=True, inplace=True)
+		df_temp = all_df[i::no_rows]
+		df_temp.reset_index(drop=True, inplace=True)
 
-	df_new4 = df[3::41]
-	df_new4.reset_index(drop=True, inplace=True)
+		df = pd.concat([df, df_temp], axis=1)
 
-	df_new5 = df[4::41]
-	df_new5.reset_index(drop=True, inplace=True)
-
-	df_new6 = df[5::41]
-	df_new6.reset_index(drop=True, inplace=True)
-
-	df_new7 = df[6::41]
-	df_new7.reset_index(drop=True, inplace=True)
-
-	df_new8 = df[7::41]
-	df_new8.reset_index(drop=True, inplace=True)
-
-	df_new9 = df[8::41]
-	df_new9.reset_index(drop=True, inplace=True)
-
-	df_new10 = df[9::41]
-	df_new10.reset_index(drop=True, inplace=True)
-
-	df_new11 = df[10::41]
-	df_new11.reset_index(drop=True, inplace=True)
-
-	df_new12 = df[11::41]
-	df_new12.reset_index(drop=True, inplace=True)
-
-	df_new13 = df[12::41]
-	df_new13.reset_index(drop=True, inplace=True)
-
-	df_new14 = df[13::41]
-	df_new14.reset_index(drop=True, inplace=True)
-
-	df_new15 = df[14::41]
-	df_new15.reset_index(drop=True, inplace=True)
-
-	df_new16 = df[15::41]
-	df_new16.reset_index(drop=True, inplace=True)
-
-	df_new17 = df[16::41]
-	df_new17.reset_index(drop=True, inplace=True)
-
-	df_new18 = df[17::41]
-	df_new18.reset_index(drop=True, inplace=True)
-
-	df_new19 = df[18::41]
-	df_new19.reset_index(drop=True, inplace=True)
-
-	df_new20 = df[19::41]
-	df_new20.reset_index(drop=True, inplace=True)
-
-	df_new21 = df[20::41]
-	df_new21.reset_index(drop=True, inplace=True)
-
-	df_new22 = df[21::41]
-	df_new22.reset_index(drop=True, inplace=True)
-
-	df_new23 = df[22::41]
-	df_new23.reset_index(drop=True, inplace=True)
-
-	df_new24 = df[23::41]
-	df_new24.reset_index(drop=True, inplace=True)
-
-	df_new25 = df[24::41]
-	df_new25.reset_index(drop=True, inplace=True)
-
-	df_new26 = df[25::41]
-	df_new26.reset_index(drop=True, inplace=True)
-
-	df_new27 = df[26::41]
-	df_new27.reset_index(drop=True, inplace=True)
-
-	df_new28 = df[27::41]
-	df_new28.reset_index(drop=True, inplace=True)
-
-	df_new29 = df[28::41]
-	df_new29.reset_index(drop=True, inplace=True)
-
-	df_new30 = df[29::41]
-	df_new30.reset_index(drop=True, inplace=True)
-
-	df_new31 = df[30::41]
-	df_new31.reset_index(drop=True, inplace=True)
-
-	df_new32 = df[31::41]
-	df_new32.reset_index(drop=True, inplace=True)
-
-	df_new33 = df[32::41]
-	df_new33.reset_index(drop=True, inplace=True)
-
-	df_new34 = df[33::41]
-	df_new34.reset_index(drop=True, inplace=True)
-
-	df_new35 = df[34::41]
-	df_new35.reset_index(drop=True, inplace=True)
-
-	df_new36 = df[35::41]
-	df_new36.reset_index(drop=True, inplace=True)
-
-	df_new37 = df[36::41]
-	df_new37.reset_index(drop=True, inplace=True)
-
-	df_new38 = df[37::41]
-	df_new38.reset_index(drop=True, inplace=True)
-
-	df_new39 = df[38::41]
-	df_new39.reset_index(drop=True, inplace=True)
-
-	df_new40 = df[39::41]
-	df_new40.reset_index(drop=True, inplace=True)
-
-	df_new41 = df[40::41]
-	df_new41.reset_index(drop=True, inplace=True)
-
-	dfs = [df_new1, df_new2, df_new3, df_new4, df_new5, df_new6, df_new7, df_new8, df_new9, df_new10,
-	      df_new11, df_new12, df_new13, df_new14, df_new15, df_new16, df_new17, df_new18, df_new19, df_new20,
-	      df_new21, df_new22, df_new23, df_new24, df_new25, df_new26, df_new27, df_new28, df_new29, df_new30,
-	      df_new31, df_new32, df_new33, df_new34, df_new35, df_new36, df_new37, df_new38, df_new39, df_new40, df_new41]
-
-
-	df = pd.concat(dfs, axis=1)
+	# Drop rows
 	df.dropna(axis=1, inplace=True)
 
-	#######################################################################################################
-	#										ADD COLUMN NAMES
-	#######################################################################################################
+	##########################################################################
+	# 					ADD COLUMN NAMES
+	##########################################################################
 
-	column_names = ['ID', 'X', 'Y']
+	column_names = ['ID','X','Y']
 
-	for i in range(1,25):
-	    
-	    if i < 10:
-	        i = '0' + str(i)
-	    else: i = str(i)
-	        
-	    for j in range(6,11):
-	        column_names.append('3p6_e' + i + '_d' + str(j) + '_mag')
-	        column_names.append('3p6_e' + i + '_d' + str(j) + '_err')
+	for i in range(1,num_epochs+1):
 
-	for i in range(1,25):
-	    
-	    if i < 10:
-	        i = '0' + str(i)
-	    else: i = str(i)
-	        
-	    for j in range(1,6):
-	        column_names.append('4p5_e' + i + '_d' + str(j) + '_mag')
-	        column_names.append('4p5_e' + i + '_d' + str(j) + '_err') 
+		if i < 10:
+			i = '0' + str(i)
+		else: i = str(i)
 
-	
+		for j in range(6,11):
+			column_names.append('3p6_e' + i + '_d' + str(j) + '_mag')
+			column_names.append('3p6_e' + i + '_d' + str(j) + '_err')
+
+	for i in range(1,num_epochs+1):
+
+		if i < 10:
+			i = '0' + str(i)
+		else: i = str(i)
+
+		for j in range(1,6):
+			column_names.append('4p5_e' + i + '_d' + str(j) + '_mag')
+			column_names.append('4p5_e' + i + '_d' + str(j) + '_err') 
+
+
 	# Determine number of Del columns to add
-	no_del_cols = len(df.columns) - 483 # 483 columns always 
+	min_columns = 3 + (num_epochs*2*5*2) # num_epochs x (mag + err) x dithers x channels
+	no_del_cols = len(df.columns) - min_columns
 
 	del_cols = []
 
@@ -2574,7 +2453,185 @@ def average_mags(star_name, galaxy, num_epochs):
 	df.columns = column_names
 
 	# Drop 'Del' columns
-	df.drop(del_cols, axis=1, inplace=True)
+	df.drop(del_cols, axis=1, inplace=True)	
+
+
+	# # Each star has 40 rows of data
+
+	# df_new1 = df[0::41]
+	# df_new1.reset_index(drop=True, inplace=True)
+
+	# df_new2 = df[1::41]
+	# df_new2.reset_index(drop=True, inplace=True)
+
+	# df_new3 = df[2::41]
+	# df_new3.reset_index(drop=True, inplace=True)
+
+	# df_new4 = df[3::41]
+	# df_new4.reset_index(drop=True, inplace=True)
+
+	# df_new5 = df[4::41]
+	# df_new5.reset_index(drop=True, inplace=True)
+
+	# df_new6 = df[5::41]
+	# df_new6.reset_index(drop=True, inplace=True)
+
+	# df_new7 = df[6::41]
+	# df_new7.reset_index(drop=True, inplace=True)
+
+	# df_new8 = df[7::41]
+	# df_new8.reset_index(drop=True, inplace=True)
+
+	# df_new9 = df[8::41]
+	# df_new9.reset_index(drop=True, inplace=True)
+
+	# df_new10 = df[9::41]
+	# df_new10.reset_index(drop=True, inplace=True)
+
+	# df_new11 = df[10::41]
+	# df_new11.reset_index(drop=True, inplace=True)
+
+	# df_new12 = df[11::41]
+	# df_new12.reset_index(drop=True, inplace=True)
+
+	# df_new13 = df[12::41]
+	# df_new13.reset_index(drop=True, inplace=True)
+
+	# df_new14 = df[13::41]
+	# df_new14.reset_index(drop=True, inplace=True)
+
+	# df_new15 = df[14::41]
+	# df_new15.reset_index(drop=True, inplace=True)
+
+	# df_new16 = df[15::41]
+	# df_new16.reset_index(drop=True, inplace=True)
+
+	# df_new17 = df[16::41]
+	# df_new17.reset_index(drop=True, inplace=True)
+
+	# df_new18 = df[17::41]
+	# df_new18.reset_index(drop=True, inplace=True)
+
+	# df_new19 = df[18::41]
+	# df_new19.reset_index(drop=True, inplace=True)
+
+	# df_new20 = df[19::41]
+	# df_new20.reset_index(drop=True, inplace=True)
+
+	# df_new21 = df[20::41]
+	# df_new21.reset_index(drop=True, inplace=True)
+
+	# df_new22 = df[21::41]
+	# df_new22.reset_index(drop=True, inplace=True)
+
+	# df_new23 = df[22::41]
+	# df_new23.reset_index(drop=True, inplace=True)
+
+	# df_new24 = df[23::41]
+	# df_new24.reset_index(drop=True, inplace=True)
+
+	# df_new25 = df[24::41]
+	# df_new25.reset_index(drop=True, inplace=True)
+
+	# df_new26 = df[25::41]
+	# df_new26.reset_index(drop=True, inplace=True)
+
+	# df_new27 = df[26::41]
+	# df_new27.reset_index(drop=True, inplace=True)
+
+	# df_new28 = df[27::41]
+	# df_new28.reset_index(drop=True, inplace=True)
+
+	# df_new29 = df[28::41]
+	# df_new29.reset_index(drop=True, inplace=True)
+
+	# df_new30 = df[29::41]
+	# df_new30.reset_index(drop=True, inplace=True)
+
+	# df_new31 = df[30::41]
+	# df_new31.reset_index(drop=True, inplace=True)
+
+	# df_new32 = df[31::41]
+	# df_new32.reset_index(drop=True, inplace=True)
+
+	# df_new33 = df[32::41]
+	# df_new33.reset_index(drop=True, inplace=True)
+
+	# df_new34 = df[33::41]
+	# df_new34.reset_index(drop=True, inplace=True)
+
+	# df_new35 = df[34::41]
+	# df_new35.reset_index(drop=True, inplace=True)
+
+	# df_new36 = df[35::41]
+	# df_new36.reset_index(drop=True, inplace=True)
+
+	# df_new37 = df[36::41]
+	# df_new37.reset_index(drop=True, inplace=True)
+
+	# df_new38 = df[37::41]
+	# df_new38.reset_index(drop=True, inplace=True)
+
+	# df_new39 = df[38::41]
+	# df_new39.reset_index(drop=True, inplace=True)
+
+	# df_new40 = df[39::41]
+	# df_new40.reset_index(drop=True, inplace=True)
+
+	# df_new41 = df[40::41]
+	# df_new41.reset_index(drop=True, inplace=True)
+
+	# dfs = [df_new1, df_new2, df_new3, df_new4, df_new5, df_new6, df_new7, df_new8, df_new9, df_new10,
+	#       df_new11, df_new12, df_new13, df_new14, df_new15, df_new16, df_new17, df_new18, df_new19, df_new20,
+	#       df_new21, df_new22, df_new23, df_new24, df_new25, df_new26, df_new27, df_new28, df_new29, df_new30,
+	#       df_new31, df_new32, df_new33, df_new34, df_new35, df_new36, df_new37, df_new38, df_new39, df_new40, df_new41]
+
+
+	# df = pd.concat(dfs, axis=1)
+	# df.dropna(axis=1, inplace=True)
+
+	# #######################################################################################################
+	# #										ADD COLUMN NAMES
+	# #######################################################################################################
+
+	# column_names = ['ID', 'X', 'Y']
+
+	# for i in range(1,25):
+	    
+	#     if i < 10:
+	#         i = '0' + str(i)
+	#     else: i = str(i)
+	        
+	#     for j in range(6,11):
+	#         column_names.append('3p6_e' + i + '_d' + str(j) + '_mag')
+	#         column_names.append('3p6_e' + i + '_d' + str(j) + '_err')
+
+	# for i in range(1,25):
+	    
+	#     if i < 10:
+	#         i = '0' + str(i)
+	#     else: i = str(i)
+	        
+	#     for j in range(1,6):
+	#         column_names.append('4p5_e' + i + '_d' + str(j) + '_mag')
+	#         column_names.append('4p5_e' + i + '_d' + str(j) + '_err') 
+
+	
+	# # Determine number of Del columns to add
+	# no_del_cols = len(df.columns) - 483 # 483 columns always 
+
+	# del_cols = []
+
+	# for i in range(1, no_del_cols+1):
+
+	# 	column_names.append('Del'+str(i))
+	# 	del_cols.append('Del'+str(i))
+
+	# # rename column names
+	# df.columns = column_names
+
+	# # Drop 'Del' columns
+	# df.drop(del_cols, axis=1, inplace=True)
 
 	#######################################################################################################
 	#								AVERAGE MAGNITUDES AND ERRORS
@@ -2608,7 +2665,7 @@ def average_mags(star_name, galaxy, num_epochs):
 	        start_dither = 1
 	        F0 = 179.7
 	    
-	    for epoch in range(1,25): # num_epochs + 1 in general
+	    for epoch in range(1,num_epochs+1): 
 	        
 	        if epoch < 10:
 	            epoch_string = 'e0' + str(epoch)
@@ -4935,7 +4992,7 @@ def calibration_procedure_3_3_7(star_name, galaxy, channel, wavelength, epoch_nu
 	################################################################################################
 
 	# This correction takes the (3,12,20) magnitudes and puts them onto the standard (10,12,20) 
-	# system used by Reach et al. (2005) and is the standard IRAC Vega system.
+	# sy'/home/ac833/Data/' used by Reach et al. (2005) and is the standard IRAC Vega system.
 	# It also corrects for the zero point i.e. the flux of a m=0 star.
 
 	for alf in alf_files:
@@ -5271,7 +5328,8 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	# Give it the rest of the images
 	for j in range(1,len(files)):
 
-		#print files[j]
+		print '----------------------------------'
+		print files[j]
 
 		daomatch.sendline(files[j]+'/')
 
@@ -5279,13 +5337,14 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 		#index = daomatch.expect(["Next input file", "Write this transformation?", pexpect.exceptions.TIMEOUT])
 		#print "Index = " + str(index)
 
+		print index
 
 		if index == 1:
 
 			master = 1
 
 			daomatch.sendline('Y')
-			daomatch.sendline(files[j]+'/')
+			#daomatch.sendline(files[j]+'/')
 
 		# if index == 2:
 
@@ -5295,6 +5354,11 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 		if j == len(files)-1:
 
 			daomatch.sendline("")		
+
+
+		#reset index
+		index = 0
+		print index
 
 		# print "Index = " + str(index)
 
@@ -5883,7 +5947,7 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 			shutil.copy(star_name + '_on_target.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.psf')
 
 	# Delete temp folder
-	shutil.rmtree(temp)
+	#shutil.rmtree(temp)
 
 	return(0)
 
@@ -6060,14 +6124,14 @@ def calibration_procedure_testing(star_name, galaxy, channel, wavelength, epoch_
 		alf_files.append(star_name + '_' + wavelength + '_e' + epoch_number + '_d' + str(dither) + '_cbcd_dn.alf')
 
 
-	# # Copy apc file to cal file extension so next part of code works
-	# for alf in alf_files:
+	# Copy apc file to cal file extension so next part of code works
+	for alf in alf_files:
 
-	# 	alf_apc = alf.replace('.alf', '.alf_apc')
-	# 	#alf_cal = alf.replace('.alf', '.alf_cal')
+		alf_apc = alf.replace('.alf', '.alf_apc')
+		#alf_cal = alf.replace('.alf', '.alf_cal')
 
-	# 	alf_df = pd.read_csv(alf, skiprows=3, usecols=[0,1,2,3,4], names=['ID', 'x', 'y', 'mag', 'error'], delim_whitespace=True)
-	# 	alf_df.to_csv(alf_apc, sep=' ', index=False)
+		alf_df = pd.read_csv(alf, skiprows=3, usecols=[0,1,2,3,4], names=['ID', 'x', 'y', 'mag', 'error'], delim_whitespace=True)
+		alf_df.to_csv(alf_apc, sep=' ', index=False)
 
 
 	# ################################################################################################

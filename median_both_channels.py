@@ -44,7 +44,6 @@ start = time.time()
 # 										READ IN STAR LIST
 #####################################################################################################
 
-
 # Set up input file into a dataframe
 #df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period', 'RA', 'Dec', 'Channel'])
 df = pd.read_csv(sys.argv[1], header=None, delim_whitespace=True, names=['Galaxy', 'Star','Period', 'RA', 'Dec'])
@@ -247,11 +246,11 @@ for i in range(0, len(df)):
 
 
     #####################################################################################################
-    # 							CALIBRATION TO STANDARD IRAC VEGA SYSTEM
+    # 							CALIBRATION TO STANDARD IRAC VEGA SY'/home/ac833/Data/'
     ##################################################################################################### 
 
 
-	# Carry out calibration procedure to get magnitudes onto the standard IRAC Vega system of Reach et al. (2005)
+	# Carry out calibration procedure to get magnitudes onto the standard IRAC Vega sy'/home/ac833/Data/' of Reach et al. (2005)
 	# Steps:
 	# 1. Aperture correction 
 	# 2. Standard aperture correction
@@ -269,7 +268,7 @@ for i in range(0, len(df)):
 		else: wavelength = '4p5um'
 
 
-		aperture_correction(star_name, galaxy, channel, wavelength)
+		#aperture_correction(star_name, galaxy, channel, wavelength)
 
 
 		for epoch in range(1, num_epochs+1):

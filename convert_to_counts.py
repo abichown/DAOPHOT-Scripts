@@ -11,7 +11,7 @@ import fnmatch
 from astropy.io import fits
 
 # Directory to look in
-home = '/home/ac833/Data/LMC/BCD/'
+home = '/home/ac833/Data/SMC/BCD/'
 os.chdir(home)
 
 # Find all directories in the home directory
