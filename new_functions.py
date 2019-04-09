@@ -44,7 +44,11 @@ def aper_phot(star_name, galaxy, channel, wavelength, epoch_number):
 		file_stem = star_name + '_' + wavelength + '_e' + epoch_number + '_d' + dither + '_cbcd_dn'
 
 		# Copy DAOPHOT options file to current working directory
-		shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+		if galaxy == 'LMC':
+			shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+		else:
+			shutil.copy('/home/ac833/daophot-options-files/daophot_smc.opt', 'daophot.opt')
+
 		shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
 
 		# Run DAOPHOT to perform the aperture photometry
@@ -2393,144 +2397,29 @@ def average_mags(star_name, galaxy, num_epochs):
 
 	mag_file = star_name + '_on_target.mag'
 
-	df = pd.read_csv(mag_file, skiprows=3, delim_whitespace=True, header=None)
+	all_df = pd.read_csv(mag_file, skiprows=3, delim_whitespace=True, header=None)
 
 	##########################################################################
 	# 					SORT DATAFRAME
 	##########################################################################
 
-	# Each star has 40 rows of data
+	# Number of rows of data each star has depends on number of epochs which in turn depends on galaxy
+	if galaxy == 'LMC':
+		no_rows = 41
+	else: no_rows = 21
 
-	df_new1 = df[0::41]
-	df_new1.reset_index(drop=True, inplace=True)
+	# Master dataframe
+	df = pd.DataFrame()
 
-	df_new2 = df[1::41]
-	df_new2.reset_index(drop=True, inplace=True)
+	# Put data into dataframe
+	for i in range(0, no_rows):
 
-	df_new3 = df[2::41]
-	df_new3.reset_index(drop=True, inplace=True)
+		df_temp = all_df[i::no_rows]
+		df_temp.reset_index(drop=True, inplace=True)
 
-	df_new4 = df[3::41]
-	df_new4.reset_index(drop=True, inplace=True)
+		df = pd.concat([df, df_temp], axis=1)
 
-	df_new5 = df[4::41]
-	df_new5.reset_index(drop=True, inplace=True)
-
-	df_new6 = df[5::41]
-	df_new6.reset_index(drop=True, inplace=True)
-
-	df_new7 = df[6::41]
-	df_new7.reset_index(drop=True, inplace=True)
-
-	df_new8 = df[7::41]
-	df_new8.reset_index(drop=True, inplace=True)
-
-	df_new9 = df[8::41]
-	df_new9.reset_index(drop=True, inplace=True)
-
-	df_new10 = df[9::41]
-	df_new10.reset_index(drop=True, inplace=True)
-
-	df_new11 = df[10::41]
-	df_new11.reset_index(drop=True, inplace=True)
-
-	df_new12 = df[11::41]
-	df_new12.reset_index(drop=True, inplace=True)
-
-	df_new13 = df[12::41]
-	df_new13.reset_index(drop=True, inplace=True)
-
-	df_new14 = df[13::41]
-	df_new14.reset_index(drop=True, inplace=True)
-
-	df_new15 = df[14::41]
-	df_new15.reset_index(drop=True, inplace=True)
-
-	df_new16 = df[15::41]
-	df_new16.reset_index(drop=True, inplace=True)
-
-	df_new17 = df[16::41]
-	df_new17.reset_index(drop=True, inplace=True)
-
-	df_new18 = df[17::41]
-	df_new18.reset_index(drop=True, inplace=True)
-
-	df_new19 = df[18::41]
-	df_new19.reset_index(drop=True, inplace=True)
-
-	df_new20 = df[19::41]
-	df_new20.reset_index(drop=True, inplace=True)
-
-	df_new21 = df[20::41]
-	df_new21.reset_index(drop=True, inplace=True)
-
-	df_new22 = df[21::41]
-	df_new22.reset_index(drop=True, inplace=True)
-
-	df_new23 = df[22::41]
-	df_new23.reset_index(drop=True, inplace=True)
-
-	df_new24 = df[23::41]
-	df_new24.reset_index(drop=True, inplace=True)
-
-	df_new25 = df[24::41]
-	df_new25.reset_index(drop=True, inplace=True)
-
-	df_new26 = df[25::41]
-	df_new26.reset_index(drop=True, inplace=True)
-
-	df_new27 = df[26::41]
-	df_new27.reset_index(drop=True, inplace=True)
-
-	df_new28 = df[27::41]
-	df_new28.reset_index(drop=True, inplace=True)
-
-	df_new29 = df[28::41]
-	df_new29.reset_index(drop=True, inplace=True)
-
-	df_new30 = df[29::41]
-	df_new30.reset_index(drop=True, inplace=True)
-
-	df_new31 = df[30::41]
-	df_new31.reset_index(drop=True, inplace=True)
-
-	df_new32 = df[31::41]
-	df_new32.reset_index(drop=True, inplace=True)
-
-	df_new33 = df[32::41]
-	df_new33.reset_index(drop=True, inplace=True)
-
-	df_new34 = df[33::41]
-	df_new34.reset_index(drop=True, inplace=True)
-
-	df_new35 = df[34::41]
-	df_new35.reset_index(drop=True, inplace=True)
-
-	df_new36 = df[35::41]
-	df_new36.reset_index(drop=True, inplace=True)
-
-	df_new37 = df[36::41]
-	df_new37.reset_index(drop=True, inplace=True)
-
-	df_new38 = df[37::41]
-	df_new38.reset_index(drop=True, inplace=True)
-
-	df_new39 = df[38::41]
-	df_new39.reset_index(drop=True, inplace=True)
-
-	df_new40 = df[39::41]
-	df_new40.reset_index(drop=True, inplace=True)
-
-	df_new41 = df[40::41]
-	df_new41.reset_index(drop=True, inplace=True)
-
-	dfs = [df_new1, df_new2, df_new3, df_new4, df_new5, df_new6, df_new7, df_new8, df_new9, df_new10,
-	      df_new11, df_new12, df_new13, df_new14, df_new15, df_new16, df_new17, df_new18, df_new19, df_new20,
-	      df_new21, df_new22, df_new23, df_new24, df_new25, df_new26, df_new27, df_new28, df_new29, df_new30,
-	      df_new31, df_new32, df_new33, df_new34, df_new35, df_new36, df_new37, df_new38, df_new39, df_new40, df_new41]
-
-
-	df = pd.concat(dfs, axis=1)
+	# Drop rows
 	df.dropna(axis=1, inplace=True)
 
 	#######################################################################################################
@@ -2539,7 +2428,7 @@ def average_mags(star_name, galaxy, num_epochs):
 
 	column_names = ['ID', 'X', 'Y']
 
-	for i in range(1,25):
+	for i in range(1,num_epochs+1):
 	    
 	    if i < 10:
 	        i = '0' + str(i)
@@ -2549,7 +2438,7 @@ def average_mags(star_name, galaxy, num_epochs):
 	        column_names.append('3p6_e' + i + '_d' + str(j) + '_mag')
 	        column_names.append('3p6_e' + i + '_d' + str(j) + '_err')
 
-	for i in range(1,25):
+	for i in range(1,num_epochs+1):
 	    
 	    if i < 10:
 	        i = '0' + str(i)
@@ -2561,7 +2450,12 @@ def average_mags(star_name, galaxy, num_epochs):
 
 	
 	# Determine number of Del columns to add
-	no_del_cols = len(df.columns) - 483 # 483 columns always 
+	if galaxy == 'LMC':
+		num_good_cols = 483
+	else:
+		num_good_cols = 243
+
+	no_del_cols = len(df.columns) - num_good_cols 
 
 	del_cols = []
 
@@ -2608,7 +2502,7 @@ def average_mags(star_name, galaxy, num_epochs):
 	        start_dither = 1
 	        F0 = 179.7
 	    
-	    for epoch in range(1,25): # num_epochs + 1 in general
+	    for epoch in range(1,num_epochs+1):
 	        
 	        if epoch < 10:
 	            epoch_string = 'e0' + str(epoch)
@@ -5271,7 +5165,7 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	# Give it the rest of the images
 	for j in range(1,len(files)):
 
-		#print files[j]
+		#print "Supposedly giving the file: " + files[j]
 
 		daomatch.sendline(files[j]+'/')
 
@@ -5285,7 +5179,7 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 			master = 1
 
 			daomatch.sendline('Y')
-			daomatch.sendline(files[j]+'/')
+			daomatch.sendline(files[j]+'/') # If I don't have this line, LMC breaks
 
 		# if index == 2:
 
@@ -5330,6 +5224,66 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 
 	#daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
+
+	# ''' NEW '''
+
+	# # Use DAOMATCH to get initial transformations
+	# daomatch = pexpect.spawn('daomatch')
+	# daomatch.delaybeforesend = 10 # half a second delay between expecting line and sending line
+
+	# fout = file('daomatch_read_log.txt','w')
+	# fout2 = file('daomatch_send_log.txt','w')
+	# daomatch.logfile_read = fout
+	# daomatch.logfile_send = fout2
+
+	# # Input epoch 1 first dither of field as master input file
+	# daomatch.expect("Master input file:")
+	# daomatch.sendline(star_name + '_3p6um_e01_d6_cbcd_dn.ap') 
+	# daomatch.expect("Output file name")
+	# daomatch.sendline(star_name + '_on_target.mch')	
+
+	# index = 0
+
+	# # Do rest of epoch 1
+	# for dither in range(7,11):
+
+	# 	daomatch.sendline(star_name + '_3p6um_e01_d' + str(dither) + '_cbcd_dn.ap'+'/')
+
+	# 	index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+	# 	if index == 1:
+
+	# 		master = 1
+
+	# 		daomatch.sendline('Y')
+	# 		#daomatch.sendline(files[j]+'/')
+
+		
+	# # Do rest of [3.6] epochs
+	# for i in range(2,num_epochs+1):
+
+	# 	if i < 10:
+	# 		epoch = '0' + str(i)
+	# 	else:
+	# 		epoch = str(i)
+
+	# 	for j in range(6,11):
+
+	# 		daomatch.sendline(star_name + '_3p6um_e' + epoch + '_d' + str(j) + '_cbcd_dn.ap/')
+
+	# 		index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+	# 		if index == 1:
+
+	# 			master = 1
+
+	# 			daomatch.sendline('Y')
+	# 			#daomatch.sendline(files[j]+'/')
+		
+
+	# #daomatch.expect("Next input file")
+	# daomatch.sendline("") # exit
+
 
 	################################################################################################
 	# 							REMOVE DUPLICATE LINES IN MATCH FILE
@@ -5446,6 +5400,8 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	# Write out to new mch file - overwrites file with ALL epochs ins
 	cut_df.to_csv(cut_file, header=None, sep=' ', index=False)
 
+	num_lines = sum(1 for line in open(cut_file))
+	print "No. of lines in %s file = %d" % (cut_file, num_lines)
 
 	################################################################################################
 	# 					MAKE MEDIANED IMAGE FROM CUT TRANSFORMATION FILE
@@ -5458,7 +5414,7 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	montage2.logfile = fout
 
 	montage2.expect("File with transformations:")
-	montage2.sendline(star_name + '_on_target_cut.mch')
+	montage2.sendline(cut_file)
 	montage2.expect("Image-name suffix:")
 	montage2.sendline("")
 	montage2.expect("Minimum number of frames, percentile:")
@@ -5513,14 +5469,19 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 			if i < 200:
 				bad_frame_list.append(i)
 
-		if len(bad_frame_list) > 0:
+		if len(bad_frame_list) > 1: #0
 			bad = True 
 		else: 
 			bad = False
 			check = True # no bad frames so don't need to do anything
 
+		f.close()
+
 		# If there was a bad weighting, then want to remove this image from the match file
 		if bad == True:
+
+			print "Bad weighting for files"
+			print bad_frame_list
 
 			bad_frame_value = max(weights) # value of the bad frame, usually 1000.00
 
@@ -5533,14 +5494,22 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 					if y[i] == 'weight':
 						if float(y[i+2]) == bad_frame_value:
 							bad_frame = y[i+4] # this gets the file name of the bad frame
+							print "Bad frame %s with value %f" % (bad_frame, bad_frame_value)
 
+			g.close()
+							
 			# Remove bad frame 
 			with open(cut_file) as oldfile, open(cut_file+'_new', 'w') as newfile:
 				for line in oldfile:
 					if bad_frame not in line:
 						newfile.write(line)
 
+			# Copy file to correct filename
 			shutil.copy(cut_file+'_new',  cut_file)
+
+			num_lines = sum(1 for line in open(cut_file))
+
+			print "No. of lines in cut file = %d" % num_lines
 
 			# Re-run MONTAGE2
 			montage2 = pexpect.spawn('montage2')
@@ -5719,84 +5688,84 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	daophot.sendline("ex")
 	daophot.close(force=True)
 
-	# Now run these candidate PSF stars through series of tests to get rid of bad stars
+	# # Now run these candidate PSF stars through series of tests to get rid of bad stars
 
-	# Read in FITS image
-	hdulist = fits.open(star_name + '_on_target_full.fits')
+	# # Read in FITS image
+	# hdulist = fits.open(star_name + '_on_target_full.fits')
 
-	# Access the primary header-data unit (HDU)
-	hdu = hdulist[0]
-	data = hdu.data
+	# # Access the primary header-data unit (HDU)
+	# hdu = hdulist[0]
+	# data = hdu.data
 
-	# Obtain the length of the x and y axis of the image
-	x_axis = hdulist[0].header['NAXIS1']
-	y_axis = hdulist[0].header['NAXIS2']
+	# # Obtain the length of the x and y axis of the image
+	# x_axis = hdulist[0].header['NAXIS1']
+	# y_axis = hdulist[0].header['NAXIS2']
 
-	centre = [x_axis/2, y_axis/2] # centre of frame
+	# centre = [x_axis/2, y_axis/2] # centre of frame
 
-	# Obtain lower and upper x and y limits for Test 1
-	x_lo = centre[0] - (3*centre[0])/4
-	x_up = centre[0] + (3*centre[0])/4
-	y_lo = centre[1] - (3*centre[1])/4
-	y_up = centre[1] + (3*centre[1])/4
+	# # Obtain lower and upper x and y limits for Test 1
+	# x_lo = centre[0] - (3*centre[0])/4
+	# x_up = centre[0] + (3*centre[0])/4
+	# y_lo = centre[1] - (3*centre[1])/4
+	# y_up = centre[1] + (3*centre[1])/4
 
-	psf_stars = pd.read_csv(star_name + '_on_target_full.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+	# psf_stars = pd.read_csv(star_name + '_on_target_full.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
 
-	deleted_stars = 0 
+	# deleted_stars = 0 
 
-	# Carry out all the tests on each star in the df 'psf_stars'
-	for index, row in psf_stars.iterrows():
+	# # Carry out all the tests on each star in the df 'psf_stars'
+	# for index, row in psf_stars.iterrows():
 
-		execute = 1
+	# 	execute = 1
 
-		# TEST 1 : TOO CLOSE TO EDGE OF FRAME
+	# 	# TEST 1 : TOO CLOSE TO EDGE OF FRAME
 
-		# If X < x_lo or X > x_up, drop row
-		if row['X'] < x_lo or row['X'] > x_up:
-			psf_stars.drop(index, inplace=True)
-			deleted_stars += 1
-			#print "Deleting star %d because it is too close to edge of frame" % index
-			execute = 0 # don't need to carry out rest of tests
+	# 	# If X < x_lo or X > x_up, drop row
+	# 	if row['X'] < x_lo or row['X'] > x_up:
+	# 		psf_stars.drop(index, inplace=True)
+	# 		deleted_stars += 1
+	# 		print "Deleting star %d because it is too close to edge of frame" % index
+	# 		execute = 0 # don't need to carry out rest of tests
 
-		if execute == 1:
+	# 	if execute == 1:
 
-			# If Y < y_lo or Y > y_up, drop row
-			if row['Y'] < y_lo or row['Y'] > y_up:
-				psf_stars.drop(index, inplace=True)
-				deleted_stars += 1
-				#print "Deleting star %d because it is too close to edge of frame" % index
-				execute = 0 # don't need to carry out rest of tests
+	# 		# If Y < y_lo or Y > y_up, drop row
+	# 		if row['Y'] < y_lo or row['Y'] > y_up:
+	# 			psf_stars.drop(index, inplace=True)
+	# 			deleted_stars += 1
+	# 			print "Deleting star %d because it is too close to edge of frame" % index
+	# 			execute = 0 # don't need to carry out rest of tests
 
-		# TEST 2 : NOT BRIGHT ENOUGH
+	# 	# TEST 2 : NOT BRIGHT ENOUGH
 
-		# Get x and y coords of the star in question
-		x_coord = int(round(row['X'] - 1)) # zero-indexed in data and must be rounded to nearest integer
-		y_coord = int(round(row['Y'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+	# 	# Get x and y coords of the star in question
+	# 	x_coord = int(round(row['X'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+	# 	y_coord = int(round(row['Y'] - 1)) # zero-indexed in data and must be rounded to nearest integer
 
-		if execute == 1:
-			if data[y_coord, x_coord] < 150:
-				psf_stars.drop(index, inplace=True)
-				deleted_stars += 1
-				#print "Deleting star %d because it is not bright enough" % index
-				execute = 0 # don't need to carry out rest of tests
+	# 	if execute == 1:
+	# 		if data[y_coord, x_coord] < 150:
+	# 			psf_stars.drop(index, inplace=True)
+	# 			deleted_stars += 1
+	# 			print "Deleting star %d because it is not bright enough" % index
+	# 			execute = 0 # don't need to carry out rest of tests
 
-	print "Stars remaining: " + str(20-deleted_stars)
+	# print "Stars remaining: " + str(20-deleted_stars)
 
-	# Write out final list of stars to the lst file in the correct format
+	# # Write out final list of stars to the lst file in the correct format
 
-	# Get header of lst file
-	f = open(star_name + '_on_target_full.lst', 'r')
-	header = f.read().splitlines()[0:3]
-	f.close()
+	# # Get header of lst file
+	# f = open(star_name + '_on_target_full.lst', 'r')
+	# header = f.read().splitlines()[0:3]
+	# f.close()
 
-	# Now overwrite this file
-	f = open(star_name + '_on_target_full.lst', 'w')
-	f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
+	# # Now overwrite this file
+	# f = open(star_name + '_on_target_full.lst', 'w')
+	# f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
 
-	# Send stars to lst file
-	psf_stars.to_csv(f, sep=' ', mode='a', header=None)
+	# # Send stars to lst file
+	# psf_stars.to_csv(f, sep=' ', mode='a', header=None)
 
-	f.close()
+	# f.close()
 
 	# Use these stars to create PSF model and run ALLSTAR
 
@@ -5882,8 +5851,8 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 			shutil.copy(star_name + '_on_target.mag', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.mag')
 			shutil.copy(star_name + '_on_target.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.psf')
 
-	# Delete temp folder
-	shutil.rmtree(temp)
+	# # Delete temp folder
+	# #shutil.rmtree(temp)
 
 	return(0)
 
@@ -8411,7 +8380,6 @@ def loc_px_corrections(star_name, galaxy, channel, wavelength):
 
 	return(0)
 
-
 # Entire calibration procedure per image
 def entire_cal_procedure(star_name, galaxy, channel, wavelength, epoch, dither):
 
@@ -8779,3 +8747,116 @@ def entire_cal_procedure(star_name, galaxy, channel, wavelength, epoch, dither):
 	# This is the final correction
 	apc_file = apc_file.replace('.apc', '.alf_cal')
 	apc_df.to_csv(apc_file, sep=' ', index=False)
+
+# Delete files at start of run
+def initial_setup(star_name, galaxy):
+
+	# Move to star folder
+	os.chdir('/home/ac833/Data/'+galaxy+'/BCD/'+star_name)
+
+	if galaxy == 'LMC':
+		num_epochs = 24
+	else:
+		num_epochs = 12
+
+	# Create list of strings that correspond to files to keep
+	keep = []
+
+	for epoch in range(1, num_epochs+1):
+
+		if epoch <10:
+			epoch = '0' + str(epoch)
+		else:
+			epoch = str(epoch)
+
+		for dither in range(1,11):
+			dither=str(dither)
+			keep.append(star_name+'_3p6um_e'+epoch+'_d'+dither+'_cbcd_dn.fits') # 3p6 counts images
+			keep.append(star_name+'_3p6um_e'+epoch+'_d'+dither+'_cbcd.fits') # 3p6 flux images
+			keep.append(star_name+'_4p5um_e'+epoch+'_d'+dither+'_cbcd_dn.fits') # 4p5 counts images
+			keep.append(star_name+'_4p5um_e'+epoch+'_d'+dither+'_cbcd.fits') # 4p5 flux images			
+
+
+	for root,dirs,files in os.walk('.'):
+		for filename in files:
+
+			check = 0 # will determine whether the file is kept or deleted
+
+			# Check whether this file matches any of the files in the keep list
+			for file_string in keep:
+
+				if file_string == filename:
+					check = 1
+
+			# Filename doesn't match any we want to keep, so remove it
+			if check == 0:
+				os.remove(os.path.join(root,filename))	
+
+	return(0)
+
+# Delete intermediate files as I am running out space on my computer
+def delete_intermediate_files(star_name, galaxy):
+
+	# Move to star folder
+	os.chdir('/home/ac833/Data/'+galaxy+'/BCD/'+star_name)
+
+	if galaxy == 'LMC':
+		num_epochs = 24
+	else:
+		num_epochs = 12
+
+	# Create list of strings that correspond to files to keep
+	keep = []
+
+	for epoch in range(1, num_epochs+1):
+
+		if epoch <10:
+			epoch = '0' + str(epoch)
+		else:
+			epoch = str(epoch)
+
+		for dither in range(1,11):
+			dither=str(dither)
+			keep.append(star_name+'_3p6um_e'+epoch+'_d'+dither+'_cbcd_dn.fits') # 3p6 counts images
+			keep.append(star_name+'_3p6um_e'+epoch+'_d'+dither+'_cbcd.fits') # 3p6 flux images
+			keep.append(star_name+'_3p6um_e'+epoch+'_d'+dither+'_cbcd_dn.alf') # 3p6 allframe images
+			keep.append(star_name+'_4p5um_e'+epoch+'_d'+dither+'_cbcd_dn.fits') # 4p5 counts images
+			keep.append(star_name+'_4p5um_e'+epoch+'_d'+dither+'_cbcd.fits') # 4p5 flux images			
+			keep.append(star_name+'_4p5um_e'+epoch+'_d'+dither+'_cbcd_dn.alf') # 4p5 allframe mags
+
+		for dither in range(1,6):
+			dither=str(dither)
+			keep.append(star_name+'_4p5um_e'+epoch+'_d'+dither+'_cbcd_dn.alf_all') # 4p5 calibrated allframe mags			
+
+		for dither in range(6,11):
+			dither=str(dither)
+			keep.append(star_name+'_3p6um_e'+epoch+'_d'+dither+'_cbcd_dn.alf_all') # 3p6 calibrated allframe mags
+
+	# Individual files that need to be added
+	keep.append(star_name+'_on_target_master.fits')
+	keep.append(star_name+'_on_target_master.mag')	
+	keep.append(star_name+'_on_target_master.mch')
+	keep.append(star_name+'_off_target_master.fits')
+	keep.append(star_name+'_off_target_master.mag')	
+	keep.append(star_name+'_off_target_master.mch')
+	keep.append(star_name+'_ave_mag.txt')
+	keep.append(star_name+'_on_target.mag')
+
+	for root,dirs,files in os.walk('.'):
+		for filename in files:
+
+			check = 0 # will determine whether the file is kept or deleted
+
+			# Check whether this file matches any of the files in the keep list
+			for file_string in keep:
+
+				if file_string == filename:
+					check = 1
+
+			# Filename doesn't match any we want to keep, so remove it
+			if check == 0:
+				os.remove(os.path.join(root,filename))
+
+	return(0)
+
+

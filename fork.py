@@ -37,7 +37,7 @@ rcParams['font.serif'] = ['Garamond']
 from new_functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag, format_gloess, gloess_single_band
 from new_functions import format_cal_files, match_all_frames, average_mags, find_target, gloess_files, gloess_multiband, master_off_target_no_psf, master_on_target_both_channels, allframe_new, remove_neighbours, calc_distance, calibration_procedure_testing, master_on_target_no_timeout
 from new_functions import aperture_correction, calibration_procedure_loc_px, calibration_procedure_10_12_20, aper_phot_10_12_20
-from new_functions import calculate_aperture_correction, apply_aperture_correction, calc_ave_epoch_offset, apply_epoch_offset, loc_px_corrections, entire_cal_procedure
+from new_functions import calculate_aperture_correction, apply_aperture_correction, calc_ave_epoch_offset, apply_epoch_offset, loc_px_corrections, entire_cal_procedure, delete_intermediate_files, initial_setup
 
 start = time.time()
 
@@ -74,6 +74,21 @@ for i in range(0, len(df)):
 
 	print star_name
 
+	#####################################################################################################
+	# 								REMOVE FILES FROM PREVIOUS RUNS 
+	#####################################################################################################
+
+	# Basically, remove anything that does not end in _cbcd_dn.fits or _cbcd.fits
+	print "Removing files from previous runs"
+	initial_setup(star_name, galaxy)
+
+
+    #####################################################################################################
+    # 									PERFORM PHOTOMETRY
+    #####################################################################################################
+
+	print "Aperture photometry"
+
 	for channel in [1,2]:
 
 		if channel == 1:
@@ -83,19 +98,6 @@ for i in range(0, len(df)):
 			channel = '2'
 			wavelength = '4p5um'
 		else: wavelength = 'channel not defined'
-
-		#####################################################################################################
-		# 								REMOVE FILES FROM PREVIOUS RUNS 
-		#####################################################################################################
-
-		# Basically, remove anything that does not end in _cbcd_dn.fits or _cbcd.fits
-		# But double check this
-
-	    #####################################################################################################
-	    # 									PERFORM PHOTOMETRY
-	    #####################################################################################################
-
-		print "Aperture photometry"
 
 	    # Iterate over every epoch for the current star
 		for epoch in range(1, num_epochs+1):
@@ -455,11 +457,18 @@ for i in range(0, len(df)):
 	gloess_multiband(star_name, galaxy)
 
 
-	print '------------------------------------------------------'
+	##################################################################################################
+	# 									TIDYING UP DIRECTORIES
+	##################################################################################################
+
+	print "Tidying up files"
+	delete_intermediate_files(star_name, galaxy)
 
 	shutil.rmtree('/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/temp/')
 	# shutil.rmtree('/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch1/apc_temp/')
 	# shutil.rmtree('/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch2/apc_temp/')
+
+	print '------------------------------------------------------'
 
 	#####################################################################################################
 	# 								REPEAT ON ALL STARS IN FILE 
