@@ -37,7 +37,7 @@ rcParams['font.serif'] = ['Garamond']
 from new_functions import aper_phot, master_on_target, master_off_target, psf_phot, allframe, calibration_procedure, combine_dithers, ave_mag, get_mag, format_gloess, gloess_single_band
 from new_functions import format_cal_files, match_all_frames, average_mags, find_target, gloess_files, gloess_multiband, master_off_target_no_psf, master_on_target_both_channels, allframe_new, remove_neighbours, calc_distance, calibration_procedure_testing, master_on_target_no_timeout
 from new_functions import aperture_correction, calibration_procedure_loc_px, calibration_procedure_10_12_20, aper_phot_10_12_20
-from new_functions import calculate_aperture_correction, apply_aperture_correction, calc_ave_epoch_offset, apply_epoch_offset, loc_px_corrections, entire_cal_procedure, delete_intermediate_files, initial_setup
+from new_functions import calculate_aperture_correction, apply_aperture_correction, calc_ave_epoch_offset, apply_epoch_offset, loc_px_corrections, entire_cal_procedure, delete_intermediate_files, initial_setup, master_image
 
 start = time.time()
 
@@ -123,7 +123,8 @@ for i in range(0, len(df)):
 
 	os.chdir(os.path.expanduser('../')) # move up a level into channel folder
 	#master_on_target_both_channels(star_name, galaxy, num_epochs)
-	master_on_target_no_timeout(star_name, galaxy, num_epochs)
+	#master_on_target_no_timeout(star_name, galaxy, num_epochs)
+	master_image(star_name, galaxy, num_epochs)
 
     #####################################################################################################
     # 						CREATE MEDIANED IMAGE FOR OFF TARGET FIELDS 

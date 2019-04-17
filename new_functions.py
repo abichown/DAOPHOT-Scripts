@@ -2229,97 +2229,145 @@ def match_all_frames(star_name, galaxy, num_epochs):
 	# 							MAKE FILE OF COORDINATE TRANSFORMATIONS
 	################################################################################################
 
-	# Use DAOMATCH to get initial transformations
 	daomatch = pexpect.spawn('daomatch')
 
-	fout = file('log.txt','w')
+	daomatch.delaybeforesend = 0.5
+
+	fout = file('daomatch_log.txt','w')
 	daomatch.logfile = fout
 
-	# Input epoch 1 first dither of field as master input file
+	# Give it the (i-1)th epoch first dither (1 or 6 depending on channel)
 	daomatch.expect("Master input file:")
 	daomatch.sendline(files[0]) 
 	daomatch.expect("Output file name")
-	daomatch.sendline(star_name + '_on_target.mch')	
+	daomatch.sendline(star_name + '_on_target.mch')
 
-	index = 0
-	master = 0
+	daomatch.expect("Next input file")
 
-	# Give it the rest of the images
+	# Give it the 5 dithers for the current ith epoch 
 	for j in range(1,len(files)):
 
-		#print files[j]
-
 		daomatch.sendline(files[j]+'/')
-
 		index = daomatch.expect(["Next input file", "Write this transformation?"])
-		#index = daomatch.expect(["Next input file", "Write this transformation?", pexpect.exceptions.TIMEOUT])
-
 
 		if index == 1:
-
 			master = 1
-
 			daomatch.sendline('Y')
-			daomatch.sendline(files[j]+'/')
+			daomatch.expect("Next input file")
 
-		# if index == 2:
+	daomatch.sendline("") # No more input files
+	daomatch.expect("Good bye")
+	daomatch.close(force=True)	
 
-		# 	daomatch.sendline('Y')
+	# Remove any cases of *'s in the file
+	repl_df = pd.read_csv(star_name + '_on_target.mch', delim_whitespace=True, header=None, names=['Filename','Apostrophe','A','B','C','D','E','F','mag_offset','scatter'])
+	
+	repl_df['F'] = repl_df['F'].astype(str)
 
-		# This makes sure the last file is read properly
-		if j == len(files)-1:
+	for index, row in repl_df.iterrows():
 
-			daomatch.sendline("")		
+		repl_df['F'][index] = repl_df['F'][index].replace("*", "")
 
-		# print "Index = " + str(index)
+		if repl_df['mag_offset'][index] > 10:
+			repl_df['mag_offset'][index] = 0
 
-		# # If index = 0, then we got "Next input file" so matching worked
-		# # Do nothing
-		# if index == 1:
-
-		# 	print index
-
-		# 	print files[j] + " could not match properly"
-
-		# 	#daomatch.expect('Write this transformation')
-		# 	daomatch.sendline('No')
-
-		# # If index = 1, then we got "Write this transformation" so matching bad
-		# else:
-
-		# 	print index
-
-		# 	print files[j] + " matched correctly"
-
-		# 	if j == len(files)-1:
-
-		# 		daomatch.sendline("")
+	repl_df.fillna(0) # replace any NaN with 0 
+	repl_df.to_csv(star_name + '_on_target.mch', header=None, index=False, sep=' ')
 
 
-		# # Index will tell you whether DAOMATCH could macth the file or not
-		# index = daomatch.expect(["Next input file", pexpect.exceptions.TIMEOUT])
+	# # Use DAOMATCH to get initial transformations
+	# daomatch = pexpect.spawn('daomatch')
+
+	# fout = file('log.txt','w')
+	# daomatch.logfile = fout
+
+	# # Input epoch 1 first dither of field as master input file
+	# daomatch.expect("Master input file:")
+	# daomatch.sendline(files[0]) 
+	# daomatch.expect("Output file name")
+	# daomatch.sendline(star_name + '_on_target.mch')	
+
+	# index = 0
+	# master = 0
+
+	# # Give it the rest of the images
+	# for j in range(1,len(files)):
+
+	# 	#print files[j]
+
+	# 	daomatch.sendline(files[j]+'/')
+
+	# 	index = daomatch.expect(["Next input file", "Write this transformation?"])
+	# 	#index = daomatch.expect(["Next input file", "Write this transformation?", pexpect.exceptions.TIMEOUT])
 
 
-		#daomatch.expect("Next input file")
-		#daomatch.sendline(files[j]+'/')
+	# 	if index == 1:
 
-	#daomatch.expect("Next input file")
-	daomatch.sendline("") # exit
+	# 		master = 1
 
-	################################################################################################
-	# 							REMOVE DUPLICATE LINES IN MATCH FILE
-	################################################################################################
+	# 		daomatch.sendline('Y')
+	# 		daomatch.sendline(files[j]+'/')
 
-	lines_seen = set() # holds lines already seen
-	outfile = open('temp.mch', "w")
-	for line in open(star_name+'_on_target.mch', "r"):
-	    if line not in lines_seen: # not a duplicate
-	        outfile.write(line)
-	        lines_seen.add(line)
-	outfile.close()
+	# 	# if index == 2:
 
-	shutil.copy('temp.mch', star_name + '_on_target.mch')
+	# 	# 	daomatch.sendline('Y')
 
+	# 	# This makes sure the last file is read properly
+	# 	if j == len(files)-1:
+
+	# 		daomatch.sendline("")		
+
+	# 	# print "Index = " + str(index)
+
+	# 	# # If index = 0, then we got "Next input file" so matching worked
+	# 	# # Do nothing
+	# 	# if index == 1:
+
+	# 	# 	print index
+
+	# 	# 	print files[j] + " could not match properly"
+
+	# 	# 	#daomatch.expect('Write this transformation')
+	# 	# 	daomatch.sendline('No')
+
+	# 	# # If index = 1, then we got "Write this transformation" so matching bad
+	# 	# else:
+
+	# 	# 	print index
+
+	# 	# 	print files[j] + " matched correctly"
+
+	# 	# 	if j == len(files)-1:
+
+	# 	# 		daomatch.sendline("")
+
+
+	# 	# # Index will tell you whether DAOMATCH could macth the file or not
+	# 	# index = daomatch.expect(["Next input file", pexpect.exceptions.TIMEOUT])
+
+
+	# 	#daomatch.expect("Next input file")
+	# 	#daomatch.sendline(files[j]+'/')
+
+	# #daomatch.expect("Next input file")
+	# daomatch.sendline("") # exit
+
+	# ################################################################################################
+	# # 							REMOVE DUPLICATE LINES IN MATCH FILE
+	# ################################################################################################
+
+	# lines_seen = set() # holds lines already seen
+	# outfile = open('temp.mch', "w")
+	# for line in open(star_name+'_on_target.mch', "r"):
+	#     if line not in lines_seen: # not a duplicate
+	#         outfile.write(line)
+	#         lines_seen.add(line)
+	# outfile.close()
+
+	# shutil.copy('temp.mch', star_name + '_on_target.mch')
+
+	# # Copy full match file from any epoch to temp folder
+	# shutil.copy('/home/ac833/Data/' + galaxy + '/BCD/' + star_name + '/ch1/e01/' + star_name + '_on_target_master_full.mch', star_name + '_on_target.mch')
 
 	################################################################################################
 	# 						REPLACE .AP WITH .ALF_ALL IN MCH FILE
@@ -4458,6 +4506,8 @@ def allframe_new(star_name, galaxy, channel, wavelength, epoch_number, field):
 	# We want to remove frames not relevant to the current epoch
 	# However, we want to keep e01 d1 (for field 1) or d6 (for field 2) as this is the 'master' input file
 
+	shutil.copy(star_name + '_' + on_off + '_target_master.mch', star_name + '_' + on_off + '_target_master_full.mch')
+
 	# Open mch file i.e. the transformation file and delete rows not relevant to current epoch
 
 	mch_file = star_name + '_' + on_off + '_target_master.mch'
@@ -5165,14 +5215,9 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	# Give it the rest of the images
 	for j in range(1,len(files)):
 
-		#print "Supposedly giving the file: " + files[j]
-
 		daomatch.sendline(files[j]+'/')
 
 		index = daomatch.expect(["Next input file", "Write this transformation?"])
-		#index = daomatch.expect(["Next input file", "Write this transformation?", pexpect.exceptions.TIMEOUT])
-		#print "Index = " + str(index)
-
 
 		if index == 1:
 
@@ -5181,108 +5226,14 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 			daomatch.sendline('Y')
 			daomatch.sendline(files[j]+'/') # If I don't have this line, LMC breaks
 
-		# if index == 2:
-
-		# 	daomatch.sendline('Y')
-
 		# This makes sure the last file is read properly
 		if j == len(files)-1:
 
 			daomatch.sendline("")		
 
-		# print "Index = " + str(index)
-
-		# # If index = 0, then we got "Next input file" so matching worked
-		# # Do nothing
-		# if index == 1:
-
-		# 	print index
-
-		# 	print files[j] + " could not match properly"
-
-		# 	#daomatch.expect('Write this transformation')
-		# 	daomatch.sendline('No')
-
-		# # If index = 1, then we got "Write this transformation" so matching bad
-		# else:
-
-		# 	print index
-
-		# 	print files[j] + " matched correctly"
-
-		# 	if j == len(files)-1:
-
-		# 		daomatch.sendline("")
-
-
-		# # Index will tell you whether DAOMATCH could macth the file or not
-		# index = daomatch.expect(["Next input file", pexpect.exceptions.TIMEOUT])
-
-
-		#daomatch.expect("Next input file")
-		#daomatch.sendline(files[j]+'/')
 
 	#daomatch.expect("Next input file")
 	daomatch.sendline("") # exit
-
-	# ''' NEW '''
-
-	# # Use DAOMATCH to get initial transformations
-	# daomatch = pexpect.spawn('daomatch')
-	# daomatch.delaybeforesend = 10 # half a second delay between expecting line and sending line
-
-	# fout = file('daomatch_read_log.txt','w')
-	# fout2 = file('daomatch_send_log.txt','w')
-	# daomatch.logfile_read = fout
-	# daomatch.logfile_send = fout2
-
-	# # Input epoch 1 first dither of field as master input file
-	# daomatch.expect("Master input file:")
-	# daomatch.sendline(star_name + '_3p6um_e01_d6_cbcd_dn.ap') 
-	# daomatch.expect("Output file name")
-	# daomatch.sendline(star_name + '_on_target.mch')	
-
-	# index = 0
-
-	# # Do rest of epoch 1
-	# for dither in range(7,11):
-
-	# 	daomatch.sendline(star_name + '_3p6um_e01_d' + str(dither) + '_cbcd_dn.ap'+'/')
-
-	# 	index = daomatch.expect(["Next input file", "Write this transformation?"])
-
-	# 	if index == 1:
-
-	# 		master = 1
-
-	# 		daomatch.sendline('Y')
-	# 		#daomatch.sendline(files[j]+'/')
-
-		
-	# # Do rest of [3.6] epochs
-	# for i in range(2,num_epochs+1):
-
-	# 	if i < 10:
-	# 		epoch = '0' + str(i)
-	# 	else:
-	# 		epoch = str(i)
-
-	# 	for j in range(6,11):
-
-	# 		daomatch.sendline(star_name + '_3p6um_e' + epoch + '_d' + str(j) + '_cbcd_dn.ap/')
-
-	# 		index = daomatch.expect(["Next input file", "Write this transformation?"])
-
-	# 		if index == 1:
-
-	# 			master = 1
-
-	# 			daomatch.sendline('Y')
-	# 			#daomatch.sendline(files[j]+'/')
-		
-
-	# #daomatch.expect("Next input file")
-	# daomatch.sendline("") # exit
 
 
 	################################################################################################
@@ -5688,84 +5639,84 @@ def master_on_target_no_timeout(star_name, galaxy, num_epochs):
 	daophot.sendline("ex")
 	daophot.close(force=True)
 
-	# # Now run these candidate PSF stars through series of tests to get rid of bad stars
+	# Now run these candidate PSF stars through series of tests to get rid of bad stars
 
-	# # Read in FITS image
-	# hdulist = fits.open(star_name + '_on_target_full.fits')
+	# Read in FITS image
+	hdulist = fits.open(star_name + '_on_target_full.fits')
 
-	# # Access the primary header-data unit (HDU)
-	# hdu = hdulist[0]
-	# data = hdu.data
+	# Access the primary header-data unit (HDU)
+	hdu = hdulist[0]
+	data = hdu.data
 
-	# # Obtain the length of the x and y axis of the image
-	# x_axis = hdulist[0].header['NAXIS1']
-	# y_axis = hdulist[0].header['NAXIS2']
+	# Obtain the length of the x and y axis of the image
+	x_axis = hdulist[0].header['NAXIS1']
+	y_axis = hdulist[0].header['NAXIS2']
 
-	# centre = [x_axis/2, y_axis/2] # centre of frame
+	centre = [x_axis/2, y_axis/2] # centre of frame
 
-	# # Obtain lower and upper x and y limits for Test 1
-	# x_lo = centre[0] - (3*centre[0])/4
-	# x_up = centre[0] + (3*centre[0])/4
-	# y_lo = centre[1] - (3*centre[1])/4
-	# y_up = centre[1] + (3*centre[1])/4
+	# Obtain lower and upper x and y limits for Test 1
+	x_lo = centre[0] - (3*centre[0])/4
+	x_up = centre[0] + (3*centre[0])/4
+	y_lo = centre[1] - (3*centre[1])/4
+	y_up = centre[1] + (3*centre[1])/4
 
-	# psf_stars = pd.read_csv(star_name + '_on_target_full.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+	psf_stars = pd.read_csv(star_name + '_on_target_full.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
 
-	# deleted_stars = 0 
+	deleted_stars = 0 
 
-	# # Carry out all the tests on each star in the df 'psf_stars'
-	# for index, row in psf_stars.iterrows():
+	# Carry out all the tests on each star in the df 'psf_stars'
+	for index, row in psf_stars.iterrows():
 
-	# 	execute = 1
+		execute = 1
 
-	# 	# TEST 1 : TOO CLOSE TO EDGE OF FRAME
+		# TEST 1 : TOO CLOSE TO EDGE OF FRAME
 
-	# 	# If X < x_lo or X > x_up, drop row
-	# 	if row['X'] < x_lo or row['X'] > x_up:
-	# 		psf_stars.drop(index, inplace=True)
-	# 		deleted_stars += 1
-	# 		print "Deleting star %d because it is too close to edge of frame" % index
-	# 		execute = 0 # don't need to carry out rest of tests
+		# If X < x_lo or X > x_up, drop row
+		if row['X'] < x_lo or row['X'] > x_up:
+			psf_stars.drop(index, inplace=True)
+			deleted_stars += 1
+			print "Deleting star %d because it is too close to edge of frame" % index
+			execute = 0 # don't need to carry out rest of tests
 
-	# 	if execute == 1:
+		if execute == 1:
 
-	# 		# If Y < y_lo or Y > y_up, drop row
-	# 		if row['Y'] < y_lo or row['Y'] > y_up:
-	# 			psf_stars.drop(index, inplace=True)
-	# 			deleted_stars += 1
-	# 			print "Deleting star %d because it is too close to edge of frame" % index
-	# 			execute = 0 # don't need to carry out rest of tests
+			# If Y < y_lo or Y > y_up, drop row
+			if row['Y'] < y_lo or row['Y'] > y_up:
+				psf_stars.drop(index, inplace=True)
+				deleted_stars += 1
+				print "Deleting star %d because it is too close to edge of frame" % index
+				execute = 0 # don't need to carry out rest of tests
 
-	# 	# TEST 2 : NOT BRIGHT ENOUGH
+		# # TEST 2 : NOT BRIGHT ENOUGH
 
-	# 	# Get x and y coords of the star in question
-	# 	x_coord = int(round(row['X'] - 1)) # zero-indexed in data and must be rounded to nearest integer
-	# 	y_coord = int(round(row['Y'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+		# # Get x and y coords of the star in question
+		# x_coord = int(round(row['X'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+		# y_coord = int(round(row['Y'] - 1)) # zero-indexed in data and must be rounded to nearest integer
 
-	# 	if execute == 1:
-	# 		if data[y_coord, x_coord] < 150:
-	# 			psf_stars.drop(index, inplace=True)
-	# 			deleted_stars += 1
-	# 			print "Deleting star %d because it is not bright enough" % index
-	# 			execute = 0 # don't need to carry out rest of tests
+		# if execute == 1:
+		# 	if data[y_coord, x_coord] < 150:
+		# 		psf_stars.drop(index, inplace=True)
+		# 		deleted_stars += 1
+		# 		print "Deleting star %d because it is not bright enough" % index
+		# 		execute = 0 # don't need to carry out rest of tests
 
-	# print "Stars remaining: " + str(20-deleted_stars)
+	print "Stars remaining: " + str(20-deleted_stars)
 
-	# # Write out final list of stars to the lst file in the correct format
+	# Write out final list of stars to the lst file in the correct format
 
-	# # Get header of lst file
-	# f = open(star_name + '_on_target_full.lst', 'r')
-	# header = f.read().splitlines()[0:3]
-	# f.close()
+	# Get header of lst file
+	f = open(star_name + '_on_target_full.lst', 'r')
+	header = f.read().splitlines()[0:3]
+	f.close()
 
-	# # Now overwrite this file
-	# f = open(star_name + '_on_target_full.lst', 'w')
-	# f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
+	# Now overwrite this file
+	f = open(star_name + '_on_target_full.lst', 'w')
+	f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
 
-	# # Send stars to lst file
-	# psf_stars.to_csv(f, sep=' ', mode='a', header=None)
+	# Send stars to lst file
+	psf_stars.to_csv(f, sep=' ', mode='a', header=None)
 
-	# f.close()
+	f.close()
 
 	# Use these stars to create PSF model and run ALLSTAR
 
@@ -8859,4 +8810,1734 @@ def delete_intermediate_files(star_name, galaxy):
 
 	return(0)
 
+# Make medianed image but with varying reference image
+def median_vary_ref_im(star_name, galaxy, num_epochs):
 
+    #####################################################################################################
+    # 								COPY ALL FILES TO TEMP FOLDER
+    ##################################################################################################### 
+
+	num_images = num_epochs * 5 * 2 # 5 dithers per epoch for both channels
+
+	# List of files to use
+	files = []
+
+	# All 3p6 on target files
+	for epoch in range(1,num_epochs+1):
+		for dither in range(6,11): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+	# All 4p5 on target files
+	for epoch in range(1,num_epochs+1):
+		for dither in range(1,6): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+	# Create temporary folder to make image - will then be copied to each epoch folder
+	temp = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/temp/'
+
+	# Delete temp folder if it already exists
+	if (os.path.isdir(temp)):
+		shutil.rmtree(temp)
+
+	# Make temp folder
+	os.mkdir(temp)
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch1/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(6,11):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch2/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(1,6):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Change to temp folder 
+	os.chdir(temp)
+
+    #####################################################################################################
+    # 					DETERMINE WHICH FRAME SHOULD BE THE REFERENCE IMAGE
+    #####################################################################################################
+
+    # To determine which frame should be the reference image, count number of lines in each star list (.ap) file.
+    # The one with the most lines, and hence the most detections, should be the reference image
+
+	max_no = 0 
+	ref_im = ''
+
+	for filename in files:
+
+		num_lines = sum(1 for line in open(filename))
+
+		if num_lines > max_no:
+			max_no = num_lines # set new value of max number of lines
+			ref_im = filename # set this file to be the ref image
+
+	# Now, ref_im is the frame we want to be the first input into DAOMATCH as it has the most detections 
+	# Hopefully this will mean that the other frames are more likely to match to it because there are more detections
+
+    #####################################################################################################
+    # 											RUN DAOMATCH 
+    #####################################################################################################	
+
+	# Use DAOMATCH to get initial transformations
+	daomatch = pexpect.spawn('daomatch')
+
+	fout = file('log.txt','w')
+	daomatch.logfile = fout
+
+	# Input epoch 1 first dither of field as master input file
+	daomatch.expect("Master input file:")
+	daomatch.sendline(ref_im) 
+	daomatch.expect("Output file name")
+	daomatch.sendline(star_name + '_on_target.mch')	
+
+	index = 0
+	master = 0
+
+	# Give it the rest of the images
+	for j in range(1,len(files)):
+
+		if files[j] != ref_im:
+
+			daomatch.sendline(files[j]+'/')
+
+			index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+			if index == 1:
+
+				master = 1
+
+				daomatch.sendline('Y')
+				#daomatch.sendline(files[j]+'/') # If I don't have this line, LMC breaks
+
+			# This makes sure the last file is read properly
+			if j == len(files)-1:
+
+				daomatch.sendline("")		
+
+	daomatch.sendline("") # exit
+	return(0)
+
+# Recursive matching 
+def recursive_matching(star_name, galaxy, num_epochs):
+
+	# Create temporary folder to make image - will then be copied to each epoch folder
+	temp = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/temp/'
+
+	# Delete temp folder if it already exists
+	if (os.path.isdir(temp)):
+		shutil.rmtree(temp)
+
+	# Make temp folder
+	os.mkdir(temp)
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch1/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(6,11):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch2/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(1,6):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Change to temp folder 
+	os.chdir(temp)		
+
+	################################################################################################
+	# 				MAKE FILE OF COORDINATE TRANSFORMATIONS FOR EACH EPOCH
+	################################################################################################
+
+	wav_ep = []
+
+	for wavelength in ['3p6um', '4p5um']:
+
+		for epoch in range(1,num_epochs+1):
+
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: 
+				epoch = str(epoch)
+
+			wav_ep.append(wavelength+'_e'+epoch)
+
+
+	for i in range(0,len(wav_ep)):
+
+		if '3p6um' in wav_ep[i]:
+			start_dither = 6
+		else:
+			start_dither = 1
+
+		if wav_ep[i] == '3p6um_e01':
+			i_minus = wav_ep[i]
+		else:
+			i_minus = wav_ep[i-1]
+
+		daomatch = pexpect.spawn('daomatch')
+
+		daomatch.delaybeforesend = 0.5
+
+		fout = file(wav_ep[i] + '_log.txt','w')
+		daomatch.logfile = fout
+
+		# Give it the (i-1)th epoch first dither (1 or 6 depending on channel)
+		daomatch.expect("Master input file:")
+
+		if '3p6um' in i_minus:
+			daomatch.sendline(star_name + '_' + i_minus + '_d6_cbcd_dn.ap') 
+		else:
+			daomatch.sendline(star_name + '_' + i_minus + '_d1_cbcd_dn.ap') 
+
+		daomatch.expect("Output file name")
+		daomatch.sendline(star_name + '_' + wav_ep[i] + '.mch')
+
+		daomatch.expect("Next input file")
+
+		# Give it the 5 dithers for the current ith epoch 
+		for dither in range(start_dither,start_dither+5):
+
+
+			daomatch.sendline(star_name + '_' + wav_ep[i] + '_d' + str(dither) + '_cbcd_dn.ap'+'/')
+			index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+			if index == 1:
+				daomatch.sendline('Y')
+				daomatch.expect("Next input file")
+
+		daomatch.sendline("") # No more input files
+		daomatch.expect("Good bye")
+		daomatch.close(force=True)
+
+	# Running shifts between each epoch and epoch 1
+	x_off = 0
+	y_off = 0
+
+	# Empty match file to be appended with corrected transformations
+	#match_file = open("match_file.mch", "w")
+
+	for wavelength in ['3p6um','4p5um']:
+
+		for epoch in range(1,num_epochs+1):
+
+			if epoch < 10:
+				epoch = '0'+str(epoch)
+			else:
+				epoch = str(epoch)
+
+			df = pd.read_csv(star_name + '_' + wavelength + '_e' + epoch + '.mch', delim_whitespace=True, header=None, names=['Filename', 'Apostrophe','X','Y','A','B','C','D','E','F'], skiprows=1)
+
+			print "epoch = %s, wavelength = %s, x_off = %f, y_off = %f" % (epoch, wavelength, x_off, y_off)
+
+			temp_x = df['X'][0] 
+			temp_y = df['Y'][0]	
+
+			# Add current offsets (from all the previous epochs) to the shifts i.e. before adding the shift from this epoch
+			df['X'] += x_off
+			df['Y'] += y_off
+
+			# Set A,B,C,D,E,F to 1's and 0's
+			df['A'] = 1
+			df['B'] = 0
+			df['C'] = 0
+			df['D'] = 1
+			df['E'] = 0 
+			df['F'] = 0
+
+			# Add offsets to current running total ready for next epoch
+			x_off += temp_x
+			y_off += temp_y
+
+			print df	
+
+			# Write out to file
+			df.to_csv("combined_match_file.mch", mode='a', header=None, sep=' ', index=False)
+
+	# Now run combined match file through daomaster
+	daomaster = pexpect.spawn('daomaster')
+
+	fout = file('daomaster_log.txt','w')
+	daomaster.logfile = fout
+
+	daomaster.expect("File with list of input files:")
+	daomaster.sendline("combined_match_file.mch")
+	daomaster.expect("Minimum number, minimum fraction, enough frames:")
+	daomaster.sendline("1, 0.5, " + str(num_epochs*5*2)) 
+	daomaster.expect("Maximum sigma:")
+	daomaster.sendline("99") 
+	daomaster.expect("Your choice:")
+	daomaster.sendline("6") # solve for 6 degrees of freedom
+	daomaster.expect("Critical match-up radius:")
+	daomaster.sendline("7") 
+
+	for j in range(1,num_epochs*5*2):
+		daomaster.sendline("")
+
+	# Reduce the match up radius 
+	for match_up in range(7,-1,-1):
+		daomaster.expect("New match-up radius")
+		daomaster.sendline(str(match_up))	
+
+	daomaster.expect("Assign new star IDs?")
+	daomaster.sendline("y") # assign new ids so all frames have same ids
+	daomaster.expect("A file with mean magnitudes and scatter?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with corrected magnitudes and errors?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with raw magnitudes and errors?")
+	daomaster.sendline("n")
+	daomaster.expect("A file with the new transformations?")
+	daomaster.sendline("y")
+	daomaster.expect("Output file name")
+	daomaster.sendline('test.mch') # these are more refined transformations
+	# daomaster.expect("New output file name")
+	# daomaster.sendline("")
+	daomaster.expect("A file with the transfer table?")
+	daomaster.sendline("e") # exits rest of options
+
+	df = pd.read_csv('test.mch', delim_whitespace=True, header=None, names=['Filename', 'Apostrophe','X','Y','A','B','C','D','E','F'])
+	df['E'] = 0
+	df['F'] = 0
+	df.to_csv("test.mch_new", mode='w', header=None, sep=' ', index=False)
+
+	################################################################################################
+	# 							MAKE MEDIANED IMAGE
+	################################################################################################
+
+	montage2 = pexpect.spawn('montage2')
+
+	# Set up log file
+	fout = file('montage_log.txt','w')
+	montage2.logfile = fout
+
+	montage2.expect("File with transformations:")
+	montage2.sendline('test.mch_new')
+	montage2.expect("Image-name suffix:")
+	montage2.sendline("")
+	montage2.expect("Minimum number of frames, percentile:")
+	montage2.sendline("1,0.5") # play around with minimum number of frames
+	montage2.expect("X limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Y limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Expansion factor:")
+	montage2.sendline("1") # creates image with same scale as bcd images
+	montage2.expect("Determine sky from overlap region?")
+	montage2.sendline("y")
+	montage2.expect("Name for output image")
+	montage2.sendline('test.fits')
+	montage2.expect("Good bye")
+	montage2.close(force=True)		
+
+
+	# Offset x and y back to reference image of 3p6 epoch 1 d1/d6
+	# To do this increment x_off and y_off by difference between current epoch d6/1 and previous epoch d6/1
+
+	return(0)
+
+# NEW MATCHING FUNCTION
+def master_image(star_name, galaxy, num_epochs):
+
+	num_images = num_epochs * 5 * 2 # 5 dithers per epoch for both channels
+
+	# List of files to use
+	files = []
+
+	# All 3p6 on target files
+	for epoch in range(1,num_epochs+1):
+		for dither in range(6,11): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+	# All 4p5 on target files
+	for epoch in range(1,num_epochs+1):
+		for dither in range(1,6): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+	# Create temporary folder to make image - will then be copied to each epoch folder
+	temp = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/temp/'
+
+	# Delete temp folder if it already exists
+	if (os.path.isdir(temp)):
+		shutil.rmtree(temp)
+
+	# Make temp folder
+	os.mkdir(temp)
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch1/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(6,11):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch2/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(1,6):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Change to temp folder 
+	os.chdir(temp)
+
+	################################################################################################
+	# 					MAKE FILE OF COORDINATE TRANSFORMATIONS FOR ALL FRAMES
+	################################################################################################
+
+	# THIS CREATES A TRANSFORMATION FILE FOR ALL FRAMES, REGARDLESS OF WHETHER IT IS A GOOD MATCH OR NOT
+	# THIS IS USED LATER ON TO CREATE BIG MAGNITUDE FILE
+
+	daomatch = pexpect.spawn('daomatch')
+
+	daomatch.delaybeforesend = 0.5
+
+	fout = file('daomatch_log.txt','w')
+	daomatch.logfile = fout
+
+	# Give it the (i-1)th epoch first dither (1 or 6 depending on channel)
+	daomatch.expect("Master input file:")
+	daomatch.sendline(files[0]) 
+	daomatch.expect("Output file name")
+	daomatch.sendline(star_name + '_on_target_all_frames.mch')
+
+	daomatch.expect("Next input file")
+
+	# Give it the 5 dithers for the current ith epoch 
+	for j in range(1,len(files)):
+
+		daomatch.sendline(files[j]+'/')
+		index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+		if index == 1:
+			master = 1
+			daomatch.sendline('Y')
+			daomatch.expect("Next input file")
+
+	daomatch.sendline("") # No more input files
+	daomatch.expect("Good bye")
+	daomatch.close(force=True)	
+
+	# Remove any cases of *'s in the file
+	repl_df = pd.read_csv(star_name + '_on_target_all_frames.mch', delim_whitespace=True, header=None, names=['Filename','Apostrophe','A','B','C','D','E','F','mag_offset','scatter'])
+
+	repl_df['F'] = repl_df['F'].astype(str)
+
+	for index, row in repl_df.iterrows():
+
+		repl_df['F'][index] = repl_df['F'][index].replace("*", "")
+
+		if repl_df['mag_offset'][index] > 10:
+			repl_df['mag_offset'][index] = 0
+
+	repl_df.fillna(0) # replace any NaN with 0 
+	repl_df.to_csv(star_name + '_on_target_all_frames.mch', header=None, index=False, sep=' ')
+
+	################################################################################################
+	# 					MAKE FILE OF COORDINATE TRANSFORMATIONS FOR CUT FRAMES
+	################################################################################################
+
+	daomatch = pexpect.spawn('daomatch')
+
+	daomatch.delaybeforesend = 0.5
+
+	fout = file('daomatch_log.txt','w')
+	daomatch.logfile = fout
+
+	# Give it the (i-1)th epoch first dither (1 or 6 depending on channel)
+	daomatch.expect("Master input file:")
+	daomatch.sendline(files[0]) 
+	daomatch.expect("Output file name")
+	daomatch.sendline(star_name + '_on_target_cut_frames.mch')
+
+	daomatch.expect("Next input file")
+
+	# Give it the 5 dithers for the current ith epoch 
+	for j in range(1,len(files)):
+
+		daomatch.sendline(files[j]+'/')
+		index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+		if index == 1:
+			master = 1
+			daomatch.sendline('N')
+			daomatch.expect("Next input file")
+
+	daomatch.sendline("") # No more input files
+	daomatch.expect("Good bye")
+	daomatch.close(force=True)	
+
+	# # Remove any cases of *'s in the file
+	# repl_df = pd.read_csv(star_name + '_on_target_cut_frames.mch', delim_whitespace=True, header=None, names=['Filename','Apostrophe','A','B','C','D','E','F','mag_offset','scatter'])
+
+	# for index, row in repl_df.iterrows():
+
+	# 	repl_df['F'][index] = repl_df['F'][index].replace("*", "")
+
+	# 	if repl_df['mag_offset'][index] > 10:
+	# 		repl_df['mag_offset'][index] = 0
+
+	# repl_df.fillna(0) # replace any NaN with 0 
+	# repl_df.to_csv(star_name + '_on_target_all_frames.mch', header=None, index=False, sep=' ')
+
+	cut_file = star_name + '_on_target_cut_frames.mch'
+	num_lines = sum(1 for line in open(cut_file))
+	print "No. of lines in %s file = %d" % (cut_file, num_lines)
+
+	# ################################################################################################
+	# # 				MAKE FILE OF COORDINATE TRANSFORMATIONS FOR SUBSET OF FRAMES
+	# ################################################################################################
+
+	# # THIS IS DONE BECAUSE ADDING TOO MANY FRAMES CAUSES STARS TO BLUR TOGETHER
+	# # THEN STARS AREN'T PICKED UP INDIVIDUALLY
+
+	# medianed_files = []
+
+	# for wavelength in ['3p6um', '4p5um']:
+
+	# 	if wavelength == '3p6um':
+	# 		dither = 6
+	# 	else: dither = 1
+
+	# 	for epoch in range(1,6):
+
+	# 		for dith in range(dither, dither+5):
+
+	# 			filename = star_name + '_' + wavelength + '_e0' + str(epoch) + '_d' + str(dith) + '_cbcd_dn.ap'
+	# 			medianed_files.append(filename)
+
+	# daomatch = pexpect.spawn('daomatch')
+
+	# daomatch.delaybeforesend = 0.5
+
+	# fout = file('daomatch_log.txt','w')
+	# daomatch.logfile = fout
+
+	# # Give it the (i-1)th epoch first dither (1 or 6 depending on channel)
+	# daomatch.expect("Master input file:")
+	# daomatch.sendline(medianed_files[0]) 
+	# daomatch.expect("Output file name")
+	# daomatch.sendline(star_name + '_on_target_cut_frames.mch')
+
+	# daomatch.expect("Next input file")
+
+	# # Give it the 5 dithers for the current ith epoch 
+	# for j in range(1,len(medianed_files)):
+
+	# 	daomatch.sendline(medianed_files[j]+'/')
+	# 	index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+	# 	if index == 1:
+	# 		master = 1
+	# 		daomatch.sendline('N')
+	# 		daomatch.expect("Next input file")
+
+	# daomatch.sendline("") # No more input files
+	# daomatch.expect("Good bye")
+	# daomatch.close(force=True)	
+
+	# cut_file = star_name + '_on_target_cut_frames.mch'
+	# num_lines = sum(1 for line in open(cut_file))
+	# print "No. of lines in %s file = %d" % (cut_file, num_lines)
+
+	# # If all stars matched well, then can do DAOMASTER i think?
+
+	# # Use DAOMASTER to refine the transformations
+	# daomaster = pexpect.spawn('daomaster')
+
+	# fout = file('daomaster_log.txt','w')
+	# daomaster.logfile = fout
+
+	# daomaster.expect("File with list of input files:")
+	# daomaster.sendline(star_name + '_on_target_cut_frames.mch')
+	# daomaster.expect("Minimum number, minimum fraction, enough frames:")
+	# daomaster.sendline("1, 0.5, " + str(num_lines)) # play around with these values
+	# daomaster.expect("Maximum sigma:")
+	# daomaster.sendline("99") 
+	# daomaster.expect("Your choice:")
+	# daomaster.sendline("6") # solve for 6 degrees of freedom
+	# daomaster.expect("Critical match-up radius:")
+	# daomaster.sendline("7") 
+
+	# for j in range(1,len(files)):
+	# 	daomaster.sendline("")
+
+	# # Reduce the match up radius 
+	# for match_up in range(7,-1,-1):
+	# 	daomaster.expect("New match-up radius")
+	# 	daomaster.sendline(str(match_up))	
+
+	# daomaster.expect("Assign new star IDs?")
+	# daomaster.sendline("y") # assign new ids so all frames have same ids
+	# daomaster.expect("A file with mean magnitudes and scatter?")
+	# daomaster.sendline("n")
+	# daomaster.expect("A file with corrected magnitudes and errors?")
+	# daomaster.sendline("n")
+	# daomaster.expect("A file with raw magnitudes and errors?")
+	# daomaster.sendline("n")
+	# daomaster.expect("A file with the new transformations?")
+	# daomaster.sendline("y")
+	# daomaster.expect("Output file name")
+	# daomaster.sendline(star_name + '_on_target_cut_frames.mch') # these are more refined transformations
+	# daomaster.expect("New output file name")
+	# daomaster.sendline("")
+	# daomaster.expect("A file with the transfer table?")
+	# daomaster.sendline("e") # exits rest of options
+
+	################################################################################################
+	# 					MAKE MEDIANED IMAGE FROM CUT TRANSFORMATION FILE
+	################################################################################################
+
+	montage2 = pexpect.spawn('montage2')
+
+	# Set up log file
+	fout = file('montage_log.txt','w')
+	montage2.logfile = fout
+
+	montage2.expect("File with transformations:")
+	montage2.sendline(cut_file)
+	montage2.expect("Image-name suffix:")
+	montage2.sendline("")
+	montage2.expect("Minimum number of frames, percentile:")
+	montage2.sendline("1,0.5") # play around with minimum number of frames
+	montage2.expect("X limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Y limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Expansion factor:")
+	montage2.sendline("1") # creates image with same scale as bcd images
+	montage2.expect("Determine sky from overlap region?")
+	montage2.sendline("y")
+	montage2.expect("Name for output image")
+	montage2.sendline(star_name + '_on_target.fits')
+	montage2.expect("Good bye")
+	montage2.close(force=True)	
+
+	# Now want to check whether a good medianed image was made
+	# To do this, examine the weightings in the montage log file 
+	# They should all be quite high. If there exists one which isn't then bad image made
+	# In this case, the overly-weighted image gets discarded and a new image made
+	# This repeats until all the weightings are acceptable
+
+	# Check whether weightings are good
+	check = False
+
+	while check == False:
+
+		f = open('montage_log.txt', 'r')
+
+		weights = []
+
+		for line in f:
+			y = line.split()
+
+			for i in range(1,len(y)):
+				if y[i] == 'weight':
+					weights.append(y[i+2]) # this is the weights value
+
+		weights = np.array(weights) # convert to array
+		weights = weights.astype(float) # convert from strings to floats
+
+		bad_frame_list = []
+
+		# Check for bad frames
+		for i in weights:
+			if i < 200:
+				bad_frame_list.append(i)
+
+		if len(bad_frame_list) > 1: #0
+			bad = True 
+		else: 
+			bad = False
+			check = True # no bad frames so don't need to do anything
+
+		f.close()
+
+		# If there was a bad weighting, then want to remove this image from the match file
+		if bad == True:
+
+			print "Bad weighting for files"
+			print bad_frame_list
+
+			bad_frame_value = max(weights) # value of the bad frame, usually 1000.00
+
+			g = open('montage_log.txt', 'r')
+
+			for line in g:
+				y = line.split()
+
+				for i in range(1,len(y)):
+					if y[i] == 'weight':
+						if float(y[i+2]) == bad_frame_value:
+							bad_frame = y[i+4] # this gets the file name of the bad frame
+							print "Bad frame %s with value %f" % (bad_frame, bad_frame_value)
+
+			g.close()
+							
+			# Remove bad frame 
+			with open(cut_file) as oldfile, open(cut_file+'_new', 'w') as newfile:
+				for line in oldfile:
+					if bad_frame not in line:
+						newfile.write(line)
+
+			# Copy file to correct filename
+			shutil.copy(cut_file+'_new',  cut_file)
+
+			num_lines = sum(1 for line in open(cut_file))
+
+			print "No. of lines in cut file = %d" % num_lines
+
+			# Delete old image because it is bad
+			os.remove(star_name + '_on_target.fits')
+
+			# Re-run MONTAGE2
+			montage2 = pexpect.spawn('montage2')
+
+			# Set up log file
+			fout = file('montage_log.txt','w')
+			montage2.logfile = fout
+
+			montage2.expect("File with transformations:")
+			montage2.sendline(cut_file)
+			montage2.expect("Image-name suffix:")
+			montage2.sendline("")
+			montage2.expect("Minimum number of frames, percentile:")
+			montage2.sendline("1,0.5") # play around with minimum number of frames
+			montage2.expect("X limits of output image:")
+			montage2.sendline("e")
+			montage2.expect("Y limits of output image:")
+			montage2.sendline("e")
+			montage2.expect("Expansion factor:")
+			montage2.sendline("1") # creates image with same scale as bcd images
+			montage2.expect("Determine sky from overlap region?")
+			montage2.sendline("y")
+			montage2.expect("Name for output image")
+			montage2.sendline(star_name + '_on_target.fits')
+			montage2.expect("Good bye")
+			montage2.close(force=True)
+
+	################################################################################################
+	# 							X AND Y OFFSETS
+	################################################################################################
+
+	# Write down X and Y offsets - these need to be added back into master star list once it's been created
+	log = open('montage_log.txt', 'r')
+	lines = log.readlines()
+
+	offsets = []
+	
+	for line in lines:
+		if "Offsets" in line:
+
+			offsets.append(line.split(' ')[-3])
+			offsets.append(line.split(' ')[-2])
+
+
+	# Copy relevant options files across to cwd
+	shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+	shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
+	shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
+
+
+	################################################################################################
+	# 							MAKE MASTER STAR LIST
+	################################################################################################
+
+	daophot = pexpect.spawn('daophot') 
+
+	# Set up logfile
+	fout = file('daophot_log.txt','w')
+	daophot.logfile = fout
+
+	# Attach medianed image and obtain star list
+	daophot.expect("Command:")
+	daophot.sendline("at " + star_name + '_on_target.fits')
+	daophot.expect("Command:")
+	daophot.sendline("opt")
+	daophot.expect("File with parameters")
+	daophot.sendline("")
+	daophot.expect("OPT>")
+	daophot.sendline("th=20") # set an appropriately high threshold for this highly S/N medianed image
+	daophot.expect("OPT>")
+	daophot.sendline("")	
+
+	daophot.expect("Command:")
+	daophot.sendline("fi")
+	daophot.expect("Number of frames averaged, summed:")
+	daophot.sendline(str(num_lines)+",1") 
+	daophot.expect("File for positions")
+	daophot.sendline("")
+	daophot.expect("Are you happy with this?")
+	daophot.sendline("y")
+
+	daophot.expect("Command:")
+	daophot.sendline("ph")
+	daophot.expect("File with aperture radii")
+	daophot.sendline("")
+	daophot.expect("PHO>")
+	daophot.sendline("")
+	daophot.expect("Input position file")
+	daophot.sendline(star_name + '_on_target.coo')
+	daophot.expect("Output file")
+	daophot.sendline(star_name + '_on_target.ap')
+
+	################################################################################################
+	# 							MAKE PSF MODEL
+	################################################################################################
+
+	# Choose 20 brightest stars as candidate PSF stars
+	daophot.expect("Command:")
+	daophot.sendline("pi")
+	daophot.expect("Input file name")
+	daophot.sendline(star_name + '_on_target.ap')
+	daophot.expect("Desired number of stars, faintest magnitude:")
+	daophot.sendline("20,99")
+	daophot.expect("Output file name")
+	daophot.sendline(star_name + '_on_target.lst') 
+	daophot.expect("Command:")
+	daophot.sendline("ex")
+	daophot.close(force=True)
+
+	# Now run these candidate PSF stars through series of tests to get rid of bad stars
+
+	# Read in FITS image
+	hdulist = fits.open(star_name + '_on_target.fits')
+
+	# Access the primary header-data unit (HDU)
+	hdu = hdulist[0]
+	data = hdu.data
+
+	# Obtain the length of the x and y axis of the image
+	x_axis = hdulist[0].header['NAXIS1']
+	y_axis = hdulist[0].header['NAXIS2']
+
+	centre = [x_axis/2, y_axis/2] # centre of frame
+
+	# Obtain lower and upper x and y limits for Test 1
+	x_lo = centre[0] - (3*centre[0])/4
+	x_up = centre[0] + (3*centre[0])/4
+	y_lo = centre[1] - (3*centre[1])/4
+	y_up = centre[1] + (3*centre[1])/4
+
+	psf_stars = pd.read_csv(star_name + '_on_target.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+
+	deleted_stars = 0 
+
+	# Carry out all the tests on each star in the df 'psf_stars'
+	for index, row in psf_stars.iterrows():
+
+		execute = 1
+
+		# TEST 1 : TOO CLOSE TO EDGE OF FRAME
+
+		# If X < x_lo or X > x_up, drop row
+		if row['X'] < x_lo or row['X'] > x_up:
+			psf_stars.drop(index, inplace=True)
+			deleted_stars += 1
+			print "Deleting star %d because it is too close to edge of frame" % index
+			execute = 0 # don't need to carry out rest of tests
+
+		if execute == 1:
+
+			# If Y < y_lo or Y > y_up, drop row
+			if row['Y'] < y_lo or row['Y'] > y_up:
+				psf_stars.drop(index, inplace=True)
+				deleted_stars += 1
+				print "Deleting star %d because it is too close to edge of frame" % index
+				execute = 0 # don't need to carry out rest of tests
+
+
+	print "Stars remaining: " + str(20-deleted_stars)
+
+	# Write out final list of stars to the lst file in the correct format
+
+	# Get header of lst file
+	f = open(star_name + '_on_target.lst', 'r')
+	header = f.read().splitlines()[0:3]
+	f.close()
+
+	# Now overwrite this file
+	f = open(star_name + '_on_target.lst', 'w')
+	f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
+
+	# Send stars to lst file
+	psf_stars.to_csv(f, sep=' ', mode='a', header=None)
+
+	f.close()
+
+	# Use these stars to create PSF model and run ALLSTAR
+
+	daophot = pexpect.spawn('daophot')
+	daophot.expect("Command:")
+	daophot.sendline("at " + star_name + '_on_target.fits')
+
+	daophot.expect("Command:")
+	daophot.sendline("psf")
+	daophot.expect("File with aperture results")
+	daophot.sendline(star_name + '_on_target.ap')
+	daophot.expect("File with PSF stars")
+	daophot.sendline(star_name + '_on_target.lst')
+	daophot.expect("File for the PSF")
+	daophot.sendline(star_name + '_on_target.psf')
+
+	daophot.expect("Command:")
+	daophot.sendline("ex")
+	daophot.close(force=True)
+
+	allstar = pexpect.spawn('allstar')
+
+	allstar.expect("OPT>")
+	allstar.sendline("")
+	allstar.expect("Input image name:")
+	allstar.sendline(star_name + '_on_target.fits') # Run on cut medianed image as this one better at not smearing stars together
+	allstar.expect("File with the PSF")
+	allstar.sendline(star_name + '_on_target.psf')
+	allstar.expect("Input file")
+	allstar.sendline(star_name + '_on_target.ap')
+	allstar.expect("File for results")
+	allstar.sendline(star_name + '_on_target.als')
+	allstar.expect("Name for subtracted image")
+	allstar.sendline(star_name + '_on_target_dns.fits')
+	allstar.expect("Good bye")
+	allstar.close(force=True)
+
+	################################################################################################
+	# 						ADD OFFSETS BACK IN TO MASTER STAR LIST
+	################################################################################################
+
+	daophot = pexpect.spawn('daophot')
+
+	daophot.expect("Command:")
+	daophot.sendline("off") # offsets to put x and y back in
+	daophot.expect("Input file name:")
+	daophot.sendline(star_name + '_on_target.als')
+	daophot.expect("Additive offsets ID, DX, DY, DMAG:")
+	daophot.sendline("0," + offsets[0] + "," + offsets[1] + ",0")
+	daophot.expect("Output file name")
+	daophot.sendline(star_name + '_on_target.mag') # this file is the master star list 
+	daophot.expect("Command:")
+	daophot.sendline("ex")
+	daophot.close(force=True)
+
+	################################################################################################
+	# 					TIDYING UP AND COPYING FILES TO INDIVIDUAL EPOCHS
+	################################################################################################
+
+	# Change .ap file names in .mch file to .als
+	f = open(star_name +'_on_target_all_frames.mch', 'r')
+	filedata = f.read()
+	f.close()
+
+	newdata = filedata.replace(".ap",".als")
+
+	f = open(star_name +'_on_target_all_frames.mch','w')
+	f.write(newdata)
+	f.close()	
+
+	for channel in ['1','2']:
+
+		# Now copy the master image and the master star list to each of the epochs 
+		for epoch in range(1,num_epochs+1):
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			shutil.copy(star_name + '_on_target.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch' + channel + '/e'+epoch+'/'+star_name + '_on_target_master.fits')
+			shutil.copy(star_name + '_on_target_all_frames.mch', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch' + channel + '/e'+epoch+'/'+star_name + '_on_target_master.mch')
+			shutil.copy(star_name + '_on_target.mag', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.mag')
+			shutil.copy(star_name + '_on_target.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.psf')
+
+
+# Master image on target
+def master_on_target_new(star_name, galaxy, num_epochs):
+
+	# if channel == '1':
+	# 	field = '2' # the on-target images are the second 5 dithers d6-10
+	# 	start_dither = 6
+	# else:
+	# 	field = '1' # the on-target images are the first 5 dithers d1-5
+	# 	start_dither = 1
+
+	num_images = num_epochs * 5 * 2 # 5 dithers per epoch for both channels
+
+	# List of files to use
+	files = []
+
+	# All 3p6 on target files
+	for epoch in range(1,num_epochs+1):
+		for dither in range(6,11): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+	# All 4p5 on target files
+	for epoch in range(1,num_epochs+1):
+		for dither in range(1,6): 
+
+			# Get epoch in correct format
+			if epoch < 10:
+				epoch = '0' + str(epoch)
+			else: epoch = str(epoch)
+
+			dither = str(dither)
+
+			filename = star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap'
+			files.append(filename)	
+
+	# Create temporary folder to make image - will then be copied to each epoch folder
+	temp = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/temp/'
+
+	# Delete temp folder if it already exists
+	if (os.path.isdir(temp)):
+		shutil.rmtree(temp)
+
+	# Make temp folder
+	os.mkdir(temp)
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch1/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(6,11):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_3p6um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Copy all FITS images and aperture photometry files to temp folder
+	for epoch in range(1,num_epochs+1):
+
+		# Get epoch in correct format
+		if epoch < 10:
+			epoch = '0' + str(epoch)
+		else: epoch = str(epoch)
+
+		cwd = '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch2/e'+epoch+'/'
+
+		# Copy 3p6 files
+		for dither in range(1,6):
+
+			dither = str(dither)
+
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.ap') #.ap
+			shutil.copyfile(cwd + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits', temp + star_name + '_4p5um_e' + epoch + '_d' + dither + '_cbcd_dn.fits')
+
+	# Change to temp folder 
+	os.chdir(temp)
+
+	################################################################################################
+	# 							MAKE FILE OF COORDINATE TRANSFORMATIONS
+	################################################################################################
+
+	master = 0
+
+	daomatch = pexpect.spawn('daomatch')
+
+	daomatch.delaybeforesend = 0.5
+
+	fout = file('daomatch_log.txt','w')
+	daomatch.logfile = fout
+
+	# Give it the (i-1)th epoch first dither (1 or 6 depending on channel)
+	daomatch.expect("Master input file:")
+	daomatch.sendline(files[0]) 
+	daomatch.expect("Output file name")
+	daomatch.sendline(star_name + '_on_target.mch')
+
+	daomatch.expect("Next input file")
+
+	# Give it the 5 dithers for the current ith epoch 
+	for j in range(1,len(files)):
+
+		daomatch.sendline(files[j]+'/')
+		index = daomatch.expect(["Next input file", "Write this transformation?"])
+
+		if index == 1:
+			master = 1
+			daomatch.sendline('N')
+			daomatch.expect("Next input file")
+
+	daomatch.sendline("") # No more input files
+	daomatch.expect("Good bye")
+	daomatch.close(force=True)
+
+
+	################################################################################################
+	# 									RUN DAOMASTER
+	################################################################################################
+
+
+	if master == 0:
+
+		# Use DAOMASTER to refine the transformations
+		daomaster = pexpect.spawn('daomaster')
+
+		fout = file('daomaster_log.txt','w')
+		daomaster.logfile = fout
+
+		daomaster.expect("File with list of input files:")
+		daomaster.sendline(star_name + '_on_target.mch')
+		daomaster.expect("Minimum number, minimum fraction, enough frames:")
+		daomaster.sendline("1, 0.5, " + str(num_images)) # play around with these values
+		daomaster.expect("Maximum sigma:")
+		daomaster.sendline("99") 
+		daomaster.expect("Your choice:")
+		daomaster.sendline("6") # solve for 6 degrees of freedom
+		daomaster.expect("Critical match-up radius:")
+		daomaster.sendline("7") 
+
+		for j in range(1,len(files)):
+			daomaster.sendline("")
+
+		# Reduce the match up radius 
+		for match_up in range(7,-1,-1):
+			daomaster.expect("New match-up radius")
+			daomaster.sendline(str(match_up))	
+
+		daomaster.expect("Assign new star IDs?")
+		daomaster.sendline("y") # assign new ids so all frames have same ids
+		daomaster.expect("A file with mean magnitudes and scatter?")
+		daomaster.sendline("n")
+		daomaster.expect("A file with corrected magnitudes and errors?")
+		daomaster.sendline("n")
+		daomaster.expect("A file with raw magnitudes and errors?")
+		daomaster.sendline("n")
+		daomaster.expect("A file with the new transformations?")
+		daomaster.sendline("y")
+		daomaster.expect("Output file name")
+		daomaster.sendline(star_name + '_on_target.mch') # these are more refined transformations
+		daomaster.expect("New output file name")
+		daomaster.sendline("")
+		daomaster.expect("A file with the transfer table?")
+		daomaster.sendline("e") # exits rest of options
+
+
+	################################################################################################
+	# 					CUT NUMBER OF IMAGES TO MAKE MEDIANED IMAGE
+	################################################################################################
+
+	medianed_files = []
+
+	for wavelength in ['3p6um', '4p5um']:
+
+		if wavelength == '3p6um':
+			dither = 6
+		else: dither = 1
+
+		for epoch in range(1,6):
+
+			for dith in range(dither, dither+5):
+
+				filename = star_name + '_' + wavelength + '_e0' + str(epoch) + '_d' + str(dith) + '_cbcd_dn.ap'
+				medianed_files.append(filename)
+
+	# Now create copy of transformation file
+	shutil.copy(star_name + '_on_target.mch', star_name + '_on_target_cut.mch')
+
+	# Go through transformation file and delete files that do not match any filenames in medianed_files
+	cut_file = star_name + '_on_target_cut.mch'
+	cut_df = pd.read_csv(cut_file, delim_whitespace=True, header=None, names=['Filename', 'Apostrophe', 'A', 'B', 'C', 'D', 'E', 'F', 'Mag_offset', 'Scatter'])
+
+	indices_to_remove = []
+
+	for index, row in cut_df.iterrows():
+
+		n = 0
+
+		for filename in medianed_files:
+
+			if filename in row['Filename']:
+				n = 1 # we want to keep this row
+
+		# If it didn't match any files then want to remove
+		if n == 0:
+			indices_to_remove.append(index)
+
+	# Drop rows that are not relevant to current epoch
+	cut_df.drop(indices_to_remove, inplace=True)
+
+	# Write out to new mch file - overwrites file with ALL epochs ins
+	cut_df.to_csv(cut_file, header=None, sep=' ', index=False)
+
+	num_lines = sum(1 for line in open(cut_file))
+	print "No. of lines in %s file = %d" % (cut_file, num_lines)
+
+	################################################################################################
+	# 					MAKE MEDIANED IMAGE FROM CUT TRANSFORMATION FILE
+	################################################################################################
+
+	montage2 = pexpect.spawn('montage2')
+
+	# Set up log file
+	fout = file('montage_log.txt','w')
+	montage2.logfile = fout
+
+	montage2.expect("File with transformations:")
+	montage2.sendline(cut_file)
+	montage2.expect("Image-name suffix:")
+	montage2.sendline("")
+	montage2.expect("Minimum number of frames, percentile:")
+	montage2.sendline("1,0.5") # play around with minimum number of frames
+	montage2.expect("X limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Y limits of output image:")
+	montage2.sendline("e")
+	montage2.expect("Expansion factor:")
+	montage2.sendline("1") # creates image with same scale as bcd images
+	montage2.expect("Determine sky from overlap region?")
+	montage2.sendline("y")
+	montage2.expect("Name for output image")
+	montage2.sendline(star_name + '_on_target.fits')
+	montage2.expect("Good bye")
+	montage2.close(force=True)	
+
+	# Now want to check whether a good medianed image was made
+	# To do this, examine the weightings in the montage log file 
+	# They should all be quite high. If there exists one which isn't then bad image made
+	# In this case, the overly-weighted image gets discarded and a new image made
+	# This repeats until all the weightings are acceptable
+
+	# Want to keep a copy of the transformation file for all frames as this will be required later on
+	# This step is just in case weightings are bad 
+	mch_file = star_name + '_on_target.mch'
+	shutil.copy(mch_file, star_name + '_on_target_full.mch') 
+
+	# Check whether weightings are good
+	check = False
+
+	while check == False:
+
+		f = open('montage_log.txt', 'r')
+
+		weights = []
+
+		for line in f:
+			y = line.split()
+
+			for i in range(1,len(y)):
+				if y[i] == 'weight':
+					weights.append(y[i+2]) # this is the weights value
+
+		weights = np.array(weights) # convert to array
+		weights = weights.astype(float) # convert from strings to floats
+
+		bad_frame_list = []
+
+		# Check for bad frames
+		for i in weights:
+			if i < 200:
+				bad_frame_list.append(i)
+
+		if len(bad_frame_list) > 1: #0
+			bad = True 
+		else: 
+			bad = False
+			check = True # no bad frames so don't need to do anything
+
+		f.close()
+
+		# If there was a bad weighting, then want to remove this image from the match file
+		if bad == True:
+
+			print "Bad weighting for files"
+			print bad_frame_list
+
+			bad_frame_value = max(weights) # value of the bad frame, usually 1000.00
+
+			g = open('montage_log.txt', 'r')
+
+			for line in g:
+				y = line.split()
+
+				for i in range(1,len(y)):
+					if y[i] == 'weight':
+						if float(y[i+2]) == bad_frame_value:
+							bad_frame = y[i+4] # this gets the file name of the bad frame
+							print "Bad frame %s with value %f" % (bad_frame, bad_frame_value)
+
+			g.close()
+							
+			# Remove bad frame 
+			with open(cut_file) as oldfile, open(cut_file+'_new', 'w') as newfile:
+				for line in oldfile:
+					if bad_frame not in line:
+						newfile.write(line)
+
+			# Copy file to correct filename
+			shutil.copy(cut_file+'_new',  cut_file)
+
+			num_lines = sum(1 for line in open(cut_file))
+
+			print "No. of lines in cut file = %d" % num_lines
+
+			# Re-run MONTAGE2
+			montage2 = pexpect.spawn('montage2')
+
+			# Set up log file
+			fout = file('montage_log.txt','w')
+			montage2.logfile = fout
+
+			montage2.expect("File with transformations:")
+			montage2.sendline(cut_file)
+			montage2.expect("Image-name suffix:")
+			montage2.sendline("")
+			montage2.expect("Minimum number of frames, percentile:")
+			montage2.sendline("1,0.5") # play around with minimum number of frames
+			montage2.expect("X limits of output image:")
+			montage2.sendline("e")
+			montage2.expect("Y limits of output image:")
+			montage2.sendline("e")
+			montage2.expect("Expansion factor:")
+			montage2.sendline("1") # creates image with same scale as bcd images
+			montage2.expect("Determine sky from overlap region?")
+			montage2.sendline("y")
+			montage2.expect("Name for output image")
+			montage2.sendline(star_name + '_on_target.fits')
+			montage2.expect("Good bye")
+			montage2.close(force=True)
+
+	# ################################################################################################
+	# # 							X AND Y OFFSETS
+	# ################################################################################################
+
+	# # Write down X and Y offsets - these need to be added back into master star list once it's been created
+	# log = open('montage_log.txt', 'r')
+	# lines = log.readlines()
+
+	# offsets = []
+	
+	# for line in lines:
+	# 	if "Offsets" in line:
+
+	# 		offsets.append(line.split(' ')[-3])
+	# 		offsets.append(line.split(' ')[-2])
+
+
+	# # Copy relevant options files across to cwd
+	# shutil.copy('/home/ac833/daophot-options-files/daophot.opt', 'daophot.opt')
+	# shutil.copy('/home/ac833/daophot-options-files/photo.opt', 'photo.opt')
+	# shutil.copy('/home/ac833/daophot-options-files/allstar.opt', 'allstar.opt')
+
+
+	# ################################################################################################
+	# # 							MAKE MASTER STAR LIST
+	# ################################################################################################
+
+	# daophot = pexpect.spawn('daophot') 
+
+	# # Set up logfile
+	# fout = file('daophot_log.txt','w')
+	# daophot.logfile = fout
+
+	# # Attach medianed image and obtain star list
+	# daophot.expect("Command:")
+	# daophot.sendline("at " + star_name + '_on_target.fits')
+	# daophot.expect("Command:")
+	# daophot.sendline("opt")
+	# daophot.expect("File with parameters")
+	# daophot.sendline("")
+	# daophot.expect("OPT>")
+	# daophot.sendline("th=20") # set an appropriately high threshold for this highly S/N medianed image
+	# daophot.expect("OPT>")
+	# daophot.sendline("")	
+
+	# daophot.expect("Command:")
+	# daophot.sendline("fi")
+	# daophot.expect("Number of frames averaged, summed:")
+	# daophot.sendline(str(50)+",1") 
+	# daophot.expect("File for positions")
+	# daophot.sendline("")
+	# daophot.expect("Are you happy with this?")
+	# daophot.sendline("y")
+
+	# daophot.expect("Command:")
+	# daophot.sendline("ph")
+	# daophot.expect("File with aperture radii")
+	# daophot.sendline("")
+	# daophot.expect("PHO>")
+	# daophot.sendline("")
+	# daophot.expect("Input position file")
+	# daophot.sendline(star_name + '_on_target.coo')
+	# daophot.expect("Output file")
+	# daophot.sendline(star_name + '_on_target.ap')
+
+	# ################################################################################################
+	# # 							MAKE PSF MODEL
+	# ################################################################################################
+
+	# # Want to make the PSF model from a medianed image of all 240 frames as it will have a higher
+	# # S/N ratio and so the stars it has for PSF stars should be better
+
+	# # Make medianed image from master transformation file
+
+	# montage2 = pexpect.spawn('montage2')
+
+	# # Set up log file
+	# fout = file('montage_log.txt','w')
+	# montage2.logfile = fout
+
+	# montage2.expect("File with transformations:")
+	# montage2.sendline(star_name + '_on_target.mch')
+	# montage2.expect("Image-name suffix:")
+	# montage2.sendline("")
+	# montage2.expect("Minimum number of frames, percentile:")
+	# montage2.sendline("1,0.5") # play around with minimum number of frames
+	# montage2.expect("X limits of output image:")
+	# montage2.sendline("e")
+	# montage2.expect("Y limits of output image:")
+	# montage2.sendline("e")
+	# montage2.expect("Expansion factor:")
+	# montage2.sendline("1") # creates image with same scale as bcd images
+	# montage2.expect("Determine sky from overlap region?")
+	# montage2.sendline("y")
+	# montage2.expect("Name for output image")
+	# montage2.sendline(star_name + '_on_target_full.fits')
+	# montage2.expect("Good bye")
+	# montage2.close(force=True)	
+
+	# # Get full star list from this medianed image
+	# daophot = pexpect.spawn('daophot') 
+
+	# # Set up logfile
+	# fout = file('daophot_log.txt','w')
+	# daophot.logfile = fout
+
+	# # Attach medianed image and obtain star list
+	# daophot.expect("Command:")
+	# daophot.sendline("at " + star_name + '_on_target_full.fits')
+	# daophot.expect("Command:")
+	# daophot.sendline("opt")
+	# daophot.expect("File with parameters")
+	# daophot.sendline("")
+	# daophot.expect("OPT>")
+	# daophot.sendline("th=20") # set an appropriately high threshold for this highly S/N medianed image
+	# daophot.expect("OPT>")
+	# daophot.sendline("")	
+
+	# daophot.expect("Command:")
+	# daophot.sendline("fi")
+	# daophot.expect("Number of frames averaged, summed:")
+	# daophot.sendline(str(num_images)+",1") 
+	# daophot.expect("File for positions")
+	# daophot.sendline(star_name + '_on_target_full.coo')
+	# daophot.expect("Are you happy with this?")
+	# daophot.sendline("y")
+
+	# daophot.expect("Command:")
+	# daophot.sendline("ph")
+	# daophot.expect("File with aperture radii")
+	# daophot.sendline("")
+	# daophot.expect("PHO>")
+	# daophot.sendline("")
+	# daophot.expect("Input position file")
+	# daophot.sendline(star_name + '_on_target_full.coo')
+	# daophot.expect("Output file")
+	# daophot.sendline(star_name + '_on_target_full.ap')	
+
+	# # Choose 20 brightest stars as candidate PSF stars
+	# daophot.expect("Command:")
+	# daophot.sendline("pi")
+	# daophot.expect("Input file name")
+	# daophot.sendline(star_name + '_on_target_full.ap')
+	# daophot.expect("Desired number of stars, faintest magnitude:")
+	# daophot.sendline("20,99")
+	# daophot.expect("Output file name")
+	# daophot.sendline(star_name + '_on_target_full.lst') 
+	# daophot.expect("Command:")
+	# daophot.sendline("ex")
+	# daophot.close(force=True)
+
+	# # Now run these candidate PSF stars through series of tests to get rid of bad stars
+
+	# # Read in FITS image
+	# hdulist = fits.open(star_name + '_on_target_full.fits')
+
+	# # Access the primary header-data unit (HDU)
+	# hdu = hdulist[0]
+	# data = hdu.data
+
+	# # Obtain the length of the x and y axis of the image
+	# x_axis = hdulist[0].header['NAXIS1']
+	# y_axis = hdulist[0].header['NAXIS2']
+
+	# centre = [x_axis/2, y_axis/2] # centre of frame
+
+	# # Obtain lower and upper x and y limits for Test 1
+	# x_lo = centre[0] - (3*centre[0])/4
+	# x_up = centre[0] + (3*centre[0])/4
+	# y_lo = centre[1] - (3*centre[1])/4
+	# y_up = centre[1] + (3*centre[1])/4
+
+	# psf_stars = pd.read_csv(star_name + '_on_target_full.lst', delim_whitespace=True, skiprows=3, header=None, names=['ID', 'X', 'Y', 'Mag', 'Error'], index_col=0)
+
+	# deleted_stars = 0 
+
+	# # Carry out all the tests on each star in the df 'psf_stars'
+	# for index, row in psf_stars.iterrows():
+
+	# 	execute = 1
+
+	# 	# TEST 1 : TOO CLOSE TO EDGE OF FRAME
+
+	# 	# If X < x_lo or X > x_up, drop row
+	# 	if row['X'] < x_lo or row['X'] > x_up:
+	# 		psf_stars.drop(index, inplace=True)
+	# 		deleted_stars += 1
+	# 		print "Deleting star %d because it is too close to edge of frame" % index
+	# 		execute = 0 # don't need to carry out rest of tests
+
+	# 	if execute == 1:
+
+	# 		# If Y < y_lo or Y > y_up, drop row
+	# 		if row['Y'] < y_lo or row['Y'] > y_up:
+	# 			psf_stars.drop(index, inplace=True)
+	# 			deleted_stars += 1
+	# 			print "Deleting star %d because it is too close to edge of frame" % index
+	# 			execute = 0 # don't need to carry out rest of tests
+
+	# 	# # TEST 2 : NOT BRIGHT ENOUGH
+
+	# 	# # Get x and y coords of the star in question
+	# 	# x_coord = int(round(row['X'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+	# 	# y_coord = int(round(row['Y'] - 1)) # zero-indexed in data and must be rounded to nearest integer
+
+	# 	# if execute == 1:
+	# 	# 	if data[y_coord, x_coord] < 150:
+	# 	# 		psf_stars.drop(index, inplace=True)
+	# 	# 		deleted_stars += 1
+	# 	# 		print "Deleting star %d because it is not bright enough" % index
+	# 	# 		execute = 0 # don't need to carry out rest of tests
+
+	# print "Stars remaining: " + str(20-deleted_stars)
+
+	# # Write out final list of stars to the lst file in the correct format
+
+	# # Get header of lst file
+	# f = open(star_name + '_on_target_full.lst', 'r')
+	# header = f.read().splitlines()[0:3]
+	# f.close()
+
+	# # Now overwrite this file
+	# f = open(star_name + '_on_target_full.lst', 'w')
+	# f.writelines(header[0] + '\n' + header[1] + '\n' + header[2] + '\n')
+
+	# # Send stars to lst file
+	# psf_stars.to_csv(f, sep=' ', mode='a', header=None)
+
+	# f.close()
+
+	# # Use these stars to create PSF model and run ALLSTAR
+
+	# daophot = pexpect.spawn('daophot')
+	# daophot.expect("Command:")
+	# daophot.sendline("at " + star_name + '_on_target_full.fits')
+
+	# daophot.expect("Command:")
+	# daophot.sendline("psf")
+	# daophot.expect("File with aperture results")
+	# daophot.sendline(star_name + '_on_target_full.ap')
+	# daophot.expect("File with PSF stars")
+	# daophot.sendline(star_name + '_on_target_full.lst')
+	# daophot.expect("File for the PSF")
+	# daophot.sendline(star_name + '_on_target.psf')
+
+	# daophot.expect("Command:")
+	# daophot.sendline("ex")
+	# daophot.close(force=True)
+
+	# allstar = pexpect.spawn('allstar')
+
+	# allstar.expect("OPT>")
+	# allstar.sendline("")
+	# allstar.expect("Input image name:")
+	# allstar.sendline(star_name + '_on_target.fits') # Run on cut medianed image as this one better at not smearing stars together
+	# allstar.expect("File with the PSF")
+	# allstar.sendline(star_name + '_on_target.psf')
+	# allstar.expect("Input file")
+	# allstar.sendline(star_name + '_on_target.ap')
+	# allstar.expect("File for results")
+	# allstar.sendline(star_name + '_on_target.als')
+	# allstar.expect("Name for subtracted image")
+	# allstar.sendline(star_name + '_on_target_dns.fits')
+	# allstar.expect("Good bye")
+	# allstar.close(force=True)
+
+	# ################################################################################################
+	# # 						ADD OFFSETS BACK IN TO MASTER STAR LIST
+	# ################################################################################################
+
+	# daophot = pexpect.spawn('daophot')
+
+	# daophot.expect("Command:")
+	# daophot.sendline("off") # offsets to put x and y back in
+	# daophot.expect("Input file name:")
+	# daophot.sendline(star_name + '_on_target.als')
+	# daophot.expect("Additive offsets ID, DX, DY, DMAG:")
+	# daophot.sendline("0," + offsets[0] + "," + offsets[1] + ",0")
+	# daophot.expect("Output file name")
+	# daophot.sendline(star_name + '_on_target.mag') # this file is the master star list 
+	# daophot.expect("Command:")
+	# daophot.sendline("ex")
+	# daophot.close(force=True)
+
+	# ################################################################################################
+	# # 					TIDYING UP AND COPYING FILES TO INDIVIDUAL EPOCHS
+	# ################################################################################################
+
+	# # Change .ap file names in .mch file to .als
+	# f = open(star_name +'_on_target_full.mch', 'r')
+	# filedata = f.read()
+	# f.close()
+
+	# newdata = filedata.replace(".ap",".als")
+
+	# f = open(star_name +'_on_target_full.mch','w')
+	# f.write(newdata)
+	# f.close()	
+
+	# for channel in ['1','2']:
+
+	# 	# Now copy the master image and the master star list to each of the epochs 
+	# 	for epoch in range(1,num_epochs+1):
+
+	# 		# Get epoch in correct format
+	# 		if epoch < 10:
+	# 			epoch = '0' + str(epoch)
+	# 		else: epoch = str(epoch)
+
+	# 		shutil.copy(star_name + '_on_target_full.fits', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch' + channel + '/e'+epoch+'/'+star_name + '_on_target_master.fits')
+	# 		shutil.copy(star_name + '_on_target_full.mch', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch' + channel + '/e'+epoch+'/'+star_name + '_on_target_master.mch')
+	# 		shutil.copy(star_name + '_on_target.mag', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.mag')
+	# 		shutil.copy(star_name + '_on_target.psf', '/home/ac833/Data/'+galaxy+'/BCD/'+star_name+'/ch'+channel+'/e'+epoch+'/'+star_name + '_on_target_master.psf')
+
+	# # # Delete temp folder
+	# # #shutil.rmtree(temp)
+
+	return(0)
