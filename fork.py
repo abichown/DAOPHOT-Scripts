@@ -38,6 +38,8 @@ from new_functions import aper_phot, master_on_target, master_off_target, psf_ph
 from new_functions import format_cal_files, match_all_frames, average_mags, find_target, gloess_files, gloess_multiband, master_off_target_no_psf, master_on_target_both_channels, allframe_new, remove_neighbours, calc_distance, calibration_procedure_testing, master_on_target_no_timeout
 from new_functions import aperture_correction, calibration_procedure_loc_px, calibration_procedure_10_12_20, aper_phot_10_12_20
 from new_functions import calculate_aperture_correction, apply_aperture_correction, calc_ave_epoch_offset, apply_epoch_offset, loc_px_corrections, entire_cal_procedure, delete_intermediate_files, initial_setup, master_image
+from new_functions import master_image_test, average_mags_jackknife, average_mags_weighted
+from new_functions import master_on_target_new
 
 start = time.time()
 
@@ -124,7 +126,9 @@ for i in range(0, len(df)):
 	os.chdir(os.path.expanduser('../')) # move up a level into channel folder
 	#master_on_target_both_channels(star_name, galaxy, num_epochs)
 	#master_on_target_no_timeout(star_name, galaxy, num_epochs)
-	master_image(star_name, galaxy, num_epochs)
+	#master_on_target_new(star_name, galaxy, num_epochs)
+	#master_image(star_name, galaxy, num_epochs)
+	master_image_test(star_name, galaxy, num_epochs, ra, dec)
 
     #####################################################################################################
     # 						CREATE MEDIANED IMAGE FOR OFF TARGET FIELDS 
@@ -427,7 +431,10 @@ for i in range(0, len(df)):
 	# ID X Y 3p6_e01_ave_mag 3p6_e01_ave_err ... 4p5_e24_ave_mag 4p5_e24_ave_err 
 	# Only stars with ave_mags at ALL epochs are kept
 	# This dataframe will be used to search for the Cepheid
-	ave_df = average_mags(star_name, galaxy, num_epochs)
+	#ave_df = average_mags(star_name, galaxy, num_epochs)
+	#ave_df = average_mags_jackknife(star_name, galaxy, num_epochs)
+	ave_df = average_mags_weighted(star_name, galaxy, num_epochs)
+
 
 	##################################################################################################
 	# 										FIND CEPHEID
